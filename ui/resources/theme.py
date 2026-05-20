@@ -1,0 +1,182 @@
+from ui.resources.constants import *
+
+STYLESHEET = f"""
+QMainWindow, QWidget {{
+    background: {BG_BASE};
+    color: {TEXT_PRIMARY};
+    font-family: "SF Pro Text", "Segoe UI", "Noto Sans", sans-serif;
+    font-size: 13px;
+}}
+
+/* ── Toolbar ── */
+QToolBar {{
+    background: {BG_PANEL};
+    border-bottom: 1px solid {SEPARATOR};
+    spacing: 6px;
+    padding: 4px 8px;
+}}
+QToolBar QPushButton {{
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: {TEXT_PRIMARY};
+    padding: 5px 10px;
+    font-size: 13px;
+}}
+QToolBar QPushButton:hover {{
+    background: {BG_HOVER};
+}}
+QToolBar QPushButton:pressed {{
+    background: {SEPARATOR};
+}}
+
+
+/* ── Sidebar ── */
+#sidebar {{
+    background: {BG_PANEL};
+    border-right: 1px solid {SEPARATOR};
+}}
+#sidebar QTreeWidget {{
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 4px 0;
+}}
+#sidebar QTreeWidget::item {{
+    height: 28px;
+    padding-left: 8px;
+    border-radius: 6px;
+    color: {TEXT_PRIMARY};
+}}
+#sidebar QTreeWidget::item:hover {{
+    background: {BG_HOVER};
+}}
+#sidebar QTreeWidget::item:selected {{
+    background: {ACCENT};
+    color: white;
+}}
+#sidebar QTreeWidget::branch {{
+    background: transparent;
+}}
+
+
+/* ── Section headers inside sidebar ── */
+#sectionLabel {{
+    color: {TEXT_TERTIARY};
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    padding: 14px 14px 4px 14px;
+    text-transform: uppercase;
+}}
+
+
+/* ── Tabs ── */
+QTabWidget::pane {{
+    border: none;
+    background: {BG_BASE};
+}}
+QTabBar {{
+    background: {BG_PANEL};
+    border-bottom: 1px solid {SEPARATOR};
+}}
+QTabBar::tab {{
+    background: transparent;
+    color: {TEXT_SECONDARY};
+    padding: 8px 18px;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+}}
+QTabBar::tab:hover {{
+    color: {TEXT_PRIMARY};
+}}
+QTabBar::tab:selected {{
+    color: {TEXT_PRIMARY};
+    border-bottom: 2px solid {ACCENT};
+    font-weight: 500;
+}}
+
+
+/* ── Details panel ── */
+#detailsPanel {{
+    background: {BG_PANEL};
+    border-left: 1px solid {SEPARATOR};
+}}
+
+
+/* ── Placeholder canvas areas ── */
+#canvas {{
+    background: {BG_BASE};
+    border: 1.5px dashed {SEPARATOR};
+    border-radius: 10px;
+    color: {TEXT_TERTIARY};
+}}
+
+
+/* ── Commit list items ── */
+QListWidget {{
+    background: transparent;
+    border: none;
+    outline: none;
+}}
+QListWidget::item {{
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: {TEXT_PRIMARY};
+}}
+QListWidget::item:hover {{
+    background: {BG_HOVER};
+}}
+QListWidget::item:selected {{
+    background: {ACCENT};
+    color: white;
+}}
+
+
+/* ── Scrollbars ── */
+QScrollBar:vertical {{
+    background: transparent;
+    width: 8px;
+}}
+QScrollBar::handle:vertical {{
+    background: {BG_HOVER};
+    border-radius: 4px;
+    min-height: 30px;
+}}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+    height: 0;
+}}
+QScrollBar:horizontal {{
+    background: transparent;
+    height: 8px;
+}}
+QScrollBar::handle:horizontal {{
+    background: {BG_HOVER};
+    border-radius: 4px;
+    min-width: 30px;
+}}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+    width: 0;
+}}
+
+
+/* ── QSplitter handle ── */
+QSplitter::handle {{
+    background: {SEPARATOR};
+}}
+QSplitter::handle:horizontal {{
+    width: 1px;
+}}
+
+
+/* ── Text edit ── */
+QTextEdit {{
+    background: transparent;
+    border: none;
+    color: {TEXT_SECONDARY};
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 8px;
+}}
+"""
