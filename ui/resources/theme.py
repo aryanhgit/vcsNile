@@ -31,6 +31,33 @@ QToolBar QPushButton:pressed {{
 }}
 
 
+
+/* ── Menu bar ── */
+QMenuBar {{
+    background: {BG_PANEL};
+    border-bottom: 1px solid {SEPARATOR};
+    padding: 2px 4px;
+}}
+QMenuBar::item {{ background: transparent; padding: 4px 10px; border-radius: 5px; }}
+QMenuBar::item:selected {{ background: {BG_HOVER}; }}
+
+QMenu {{
+    background: {BG_PANEL};
+    border: 1px solid {SEPARATOR};
+    border-radius: 8px;
+    padding: 4px 0;
+}}
+QMenu::item {{
+    padding: 6px 28px 6px 16px;
+    border-radius: 4px;
+    margin: 1px 4px;
+}}
+QMenu::item:selected {{ background: {ACCENT}; color: white; }}
+QMenu::item:disabled {{ color: {TEXT_TERTIARY}; }}
+QMenu::separator  {{ height: 1px; background: {SEPARATOR}; margin: 4px 10px; }}
+
+
+
 /* ── Sidebar ── */
 #sidebar {{
     background: {BG_PANEL};
