@@ -188,6 +188,7 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
 }}
 
 
+
 /* ── QSplitter handle ── */
 QSplitter::handle {{
     background: {SEPARATOR};
@@ -195,6 +196,7 @@ QSplitter::handle {{
 QSplitter::handle:horizontal {{
     width: 1px;
 }}
+
 
 
 /* ── Text edit ── */
@@ -229,5 +231,36 @@ QStatusBar {{
     border-top: 1px solid {SEPARATOR};
     font-size: 12px;
     padding: 0 8px;
+}}
+
+
+/* ── Log panel ── */
+#logPanel  {{ background: {BG_PANEL}; border-top: 1px solid {SEPARATOR}; }}
+#logHeader {{ background: {BG_PANEL}; border-bottom: 1px solid {SEPARATOR}; }}
+#logToggle {{
+    background: transparent; border: none; border-radius: 4px;
+    color: {TEXT_SECONDARY}; font-size: 12px; font-weight: 500;
+    padding: 0 6px; text-align: left; min-width: 80px;
+}}
+#logToggle:hover  {{ color: {TEXT_PRIMARY}; background: {BG_HOVER}; }}
+#logClear {{
+    background: {BG_HOVER}; border: none; border-radius: 4px;
+    color: {TEXT_TERTIARY}; font-size: 11px; padding: 1px 8px;
+}}
+#logClear:hover  {{ color: {TEXT_PRIMARY}; background: {SEPARATOR}; }}
+#logOutput {{
+    background: {BG_BASE}; border: none; outline: none;
+    color: {TEXT_SECONDARY};
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 11px; padding: 6px 10px;
+    selection-background-color: {ACCENT};
+}}
+
+
+
+/* ── Status bar ── */
+QStatusBar {{
+    background: {BG_PANEL}; color: {TEXT_TERTIARY};
+    border-top: 1px solid {SEPARATOR}; font-size: 12px; padding: 0 8px;
 }}
 """

@@ -79,6 +79,8 @@ class Sidebar(QWidget):
 
         state.repo_changed.connect(self._on_repo_changed)
 
+
+
     # Slots
     def _on_repo_changed(self, repo):
         """Rebuild tree content whenever a repo is loaded or closed."""
@@ -123,6 +125,13 @@ class Sidebar(QWidget):
             tags = []
 
         self._populate(local, remote, tags)
+        
+        # Log
+        self._state.logger.log(
+            f"Sidebar populated: {len(local)} local, "
+            f"{len(remote)} remote ref(s), {len(tags)} tag(s)"
+        )
+
 
     def _on_item_clicked(self, item: QTreeWidgetItem, _col: int):
         """Ignore group headers; emit branch_clicked for leaf items."""
@@ -131,10 +140,14 @@ class Sidebar(QWidget):
         name = item.text(0)
         self.branch_clicked.emit(name)
 
+
+
     # Builders
     def _clear_groups(self):
         for grp in (self._grp_local, self._grp_remote, self._grp_tags):
             grp.takeChildren()
+
+
 
     def _populate(self, local: list, remote: list, tags: list):
         """Fill the three group headers with fresh child items."""
@@ -161,6 +174,8 @@ class Sidebar(QWidget):
             child = QTreeWidgetItem([name])
             child.setForeground(0, QColor(ACCENT_ORANGE))
             self._grp_tags.addChild(child)
+
+
 
     @staticmethod
     def _make_group(title: str, icon: str) -> QTreeWidgetItem:

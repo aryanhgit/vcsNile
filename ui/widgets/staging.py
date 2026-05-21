@@ -1,4 +1,8 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame 
+from PySide6.QtCore import QObject, Signal
+
+from datetime import datetime
+
 from utils.helper import *
 
 class StagingPlaceholder(QWidget):
@@ -30,3 +34,20 @@ class StagingPlaceholder(QWidget):
             col_lay.addWidget(h_separator())
             col_lay.addStretch()
             layout.addWidget(col)
+
+# Git logger
+
+class GitLogger(QObject):
+    """
+    Thin logging bus shared via AppState.
+    Call  state.logger.log("msg", level)  from anywhere.
+    Levels: INFO (default) · OK · WARN · ERR
+    Emits message_logged(str) — LogPanel connects to this signal.
+    """
+    message_logged = Signal(str)
+
+    def log(self, msg: str, level: str = "INFO"):
+        ts   = datetime.now().strftime("%H:%M:%S")
+        line = f"[{ts}] [{level:<4}] {msg}"
+        self.message_logged.emit(line)
+        print(line)

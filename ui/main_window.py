@@ -12,6 +12,7 @@ from ui.widgets.details import DetailsPanel
 from ui.widgets.toolbar import AppToolBar
 from ui.widgets.recents import RecentRepos
 from ui.widgets.dialog import InitRepoDialog
+from ui.widgets.log import LogPanel
 
 from utils.state import AppState
 
@@ -29,16 +30,19 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(800, 500)
         self.setStyleSheet(STYLESHEET)
 
-        self._build_menu()
-        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, AppToolBar(state))
+        # Three-panel horizontal splitter
+        h_split = QSplitter(Qt.Orientation.Horizontal)
+        h_split.setHandleWidth(1)
+        h_split.setChildrenCollapsible(False)
 
-        # Three-panel splitter
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setHandleWidth(1)
-        splitter.setChildrenCollapsible(False)
-
-        splitter.addWidget(Sidebar(state))
         self._sidebar = Sidebar(state) 
+        h_split.addWidget(self._sidebar)
+        h_split.addWidget(CentralArea())
+        h_split.addWidget(DetailsPanel(state))
+
+        h_split.setSizes([220, 760, 240])
+        self.setCentralWidget(h_split)
+
         self._sidebar.branch_clicked.connect(
             lambda name: self.statusBar().showMessage(f"Branch: {name}", 4000)
         )
@@ -47,14 +51,24 @@ class MainWindow(QMainWindow):
             f" border-top:1px solid {SEPARATOR}; font-size:12px;"
         )
 
-
-        splitter.addWidget(CentralArea())
-        splitter.addWidget(DetailsPanel(state))
-
-        splitter.setSizes([220, 760, 240])
-        self.setCentralWidget(splitter)
-
         state.repo_changed.connect(self._on_repo_changed)
+
+        # Vertical splitter: main panels on top, log panel on bottom
+        self._log_panel = LogPanel()
+        state.logger.message_logged.connect(self._log_panel.append)
+
+        v_split = QSplitter(Qt.Orientation.Vertical)
+        v_split.setHandleWidth(1)
+        v_split.setCollapsible(0, False)     
+        v_split.setCollapsible(1, True)
+        v_split.addWidget(h_split)
+        v_split.addWidget(self._log_panel)
+        v_split.setSizes([560, 180])
+
+        self._build_menu()
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, AppToolBar(state))
+
+        self.setCentralWidget(v_split)
 
 
     # Menu bar
@@ -91,6 +105,12 @@ class MainWindow(QMainWindow):
         vm = mb.addMenu("View")
         for title in ("Commit Graph", "Staging Area", "Object Explorer"):
             vm.addAction(QAction(title, self))
+   
+        vm.addSeparator()
+        toggle_log = QAction("Toggle Log Panel", self)
+        toggle_log.setShortcut(QKeySequence("Ctrl+Shift+L"))
+        toggle_log.triggered.connect(self._log_panel.toggle)
+        vm.addAction(toggle_log)
 
     def _rebuild_recent_menu(self):
         """Regenerate Recent Repositories entries each time the sub-menu opens."""
@@ -125,38 +145,62 @@ class MainWindow(QMainWindow):
     def _load_repo(self, path: str):
         """Load `path` as a Git repositoryand persist in recent list."""
 
+        self._state.logger.log(f"Opening: {path}")
         try:
             repo = git.Repo(path, search_parent_directories=True)
             self._accept_repo(repo)
 
         except (InvalidGitRepositoryError, NoSuchPathError):
             # Ask user whether to initialise a fresh repository here
+            self._state.logger.log(f"Not a git repo: {path}", "WARN")
             dlg = InitRepoDialog(path, parent=self)
             if dlg.exec() == QDialog.DialogCode.Accepted:
                 self._init_repo(path)
 
         except Exception as exc:
+            self._state.logger.log(f"Error: {exc}", "ERR ")
             self._alert("Could not open repository", str(exc))
+
+
 
     def _init_repo(self, path: str):
         """git init `path` and load it."""
         try:
             repo = git.Repo.init(path)
+            self._state.logger.log(f"git init : {path}", "OK  ")
             self._accept_repo(repo)
         except Exception as exc:
             self._alert("Initialisation failed", str(exc))
 
+
+   
     def _accept_repo(self, repo):
-        """Commit the loaded repo to AppState and record it in recent list."""
+        """Commit loaded repo to AppState, log a summary, persist in recent list."""
+        try:
+            n_local  = len(list(repo.branches))
+            n_tags   = len(list(repo.tags))
+            n_remote = sum(len(list(r.refs)) for r in repo.remotes)
+            self._state.logger.log(
+                f"Loaded '{os.path.basename(repo.working_dir)}'"
+                f" — {n_local} local branch(es)"
+                f", {n_remote} remote ref(s)"
+                f", {n_tags} tag(s)",
+                "OK  ",
+            )
+        except Exception:
+            pass
+
         self._state.set_repo(repo)
         self._recent.push(str(repo.working_dir))
-    
+
+
     def _alert(self, title: str, message: str):
         box = QMessageBox(self)
         box.setWindowTitle(title)
         box.setText(message)
         box.setIcon(QMessageBox.Icon.Warning)
         box.exec()
+
 
 
     def _on_repo_changed(self, repo):

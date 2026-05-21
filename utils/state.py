@@ -1,4 +1,5 @@
 from PySide6.QtCore  import Signal, QObject
+from ui.widgets.staging import GitLogger
 
 class AppState(QObject):
     """
@@ -10,6 +11,7 @@ class AppState(QObject):
     def __init__(self):
         super().__init__()
         self._repo = None
+        self.logger = GitLogger()
 
     # Public interface
     @property
