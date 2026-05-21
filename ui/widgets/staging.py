@@ -1,11 +1,9 @@
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem
-from PySide6.QtCore import Qt, QObject, Signal, QSize
+from PySide6.QtCore import Qt, QSize
 
-from datetime import datetime
-
+from git_backend.state import AppState
 from utils.helper import *
-from utils.state import AppState
 
 # Staging column
 class StagingColumn(QWidget):
@@ -242,21 +240,3 @@ class StagingWidget(QWidget):
             f"{len(idx)} staged, "
             f"{len(repo_files)} committed file(s) shown"
         )
-
-
-
-# Git logger
-class GitLogger(QObject):
-    """
-    Thin logging bus shared via AppState.
-    Call  state.logger.log("msg", level)  from anywhere.
-    Levels: INFO (default) · OK · WARN · ERR
-    Emits message_logged(str) — LogPanel connects to this signal.
-    """
-    message_logged = Signal(str)
-
-    def log(self, msg: str, level: str = "INFO"):
-        ts   = datetime.now().strftime("%H:%M:%S")
-        line = f"[{ts}] [{level:<4}] {msg}"
-        self.message_logged.emit(line)
-        print(line)

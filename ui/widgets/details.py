@@ -1,7 +1,7 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QScrollArea
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea
 
+from git_backend.state import AppState
 from utils.helper import *
-from utils.state import AppState
 
 
 class DetailsPanel(QWidget):
@@ -68,35 +68,3 @@ class DetailsPanel(QWidget):
     def _on_repo_changed(self, repo):
         # Will be populated once the DAG canvas is wired
         pass
-
-#         # Message
-#         vbox.addWidget(label("Message", 11, TEXT_TERTIARY, 600))
-#         msg = QTextEdit("Initial scaffold\n\n- Add main window layout\n- Wire QSplitter panels\n- Stub DAG canvas placeholder")
-#         msg.setReadOnly(True)
-#         msg.setFixedHeight(100)
-#         vbox.addWidget(msg)
-
-#         vbox.addSpacing(8)
-#         vbox.addWidget(h_separator())
-
-#         # Changed files
-#         vbox.addWidget(label("Changed Files", 11, TEXT_TERTIARY, 600))
-#         files = [
-#             ("+", "main_window.py", ACCENT_GREEN),
-#             ("+", "sidebar.py",     ACCENT_GREEN),
-#             ("~", "requirements.txt", ACCENT_ORANGE),
-#         ]
-#         for sym, name, color in files:
-#             row = QHBoxLayout()
-#             row.addWidget(label(sym, 12, color, 700))
-#             row.addSpacing(4)
-#             row.addWidget(label(name, 12, TEXT_PRIMARY))
-#             row.addStretch()
-#             vbox.addLayout(row)
-
-#         vbox.addStretch()
-#         scroll.setWidget(body)
-#         layout.addWidget(scroll)
-
-
-

@@ -3,6 +3,8 @@ from PySide6.QtWidgets import QMainWindow, QSplitter, QMenu, QFileDialog, QDialo
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
 
+from git_backend.recent_repos import RecentRepos
+from git_backend.state import AppState
 from ui.resources.theme import STYLESHEET
 from ui.resources.constants import *
 
@@ -10,11 +12,8 @@ from ui.widgets.sidebar import Sidebar
 from ui.widgets.central import CentralArea
 from ui.widgets.details import DetailsPanel
 from ui.widgets.toolbar import AppToolBar
-from ui.widgets.recents import RecentRepos
 from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
-
-from utils.state import AppState
 
 import git
 from git.exc import InvalidGitRepositoryError, NoSuchPathError
@@ -59,10 +58,10 @@ class MainWindow(QMainWindow):
 
         v_split = QSplitter(Qt.Orientation.Vertical)
         v_split.setHandleWidth(1)
-        v_split.setCollapsible(0, False)     
-        v_split.setCollapsible(1, True)
         v_split.addWidget(h_split)
         v_split.addWidget(self._log_panel)
+        v_split.setCollapsible(0, False)
+        v_split.setCollapsible(1, True)
         v_split.setSizes([560, 180])
 
         self._build_menu()

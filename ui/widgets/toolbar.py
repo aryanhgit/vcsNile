@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QToolBar, QPushButton, QSizePolicy
 from PySide6.QtCore import QSize
 
+from git_backend.state import AppState
 from utils.helper import *
-from utils.state import AppState
 
 class AppToolBar(QToolBar):
     def __init__(self, state: AppState):

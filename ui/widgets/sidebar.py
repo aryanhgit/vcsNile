@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QT
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
 
+from git_backend.state import AppState
 from utils.helper import *
-from utils.state import AppState
 
 
 class Sidebar(QWidget):
