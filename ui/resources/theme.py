@@ -206,4 +206,28 @@ QTextEdit {{
     line-height: 1.6;
     padding: 8px;
 }}
+
+
+/* ── Sidebar grouped tree ── */
+#sidebarTree {{
+    background: transparent; border: none; outline: none;
+}}
+#sidebarTree::item {{
+    height: 26px; border-radius: 5px; padding-left: 2px;
+}}
+#sidebarTree::item:hover    {{ background: {BG_HOVER}; }}
+#sidebarTree::item:selected {{ background: {ACCENT}; color: white; }}
+/* collapse/expand arrow — tinted to match palette */
+#sidebarTree::branch {{ background: transparent; }}
+#sidebarTree::branch:has-children:closed {{ color: {TEXT_TERTIARY}; }}
+#sidebarTree::branch:open               {{ color: {TEXT_SECONDARY}; }}
+
+/* ── Status bar ── */
+QStatusBar {{
+    background: {BG_PANEL};
+    color: {TEXT_TERTIARY};
+    border-top: 1px solid {SEPARATOR};
+    font-size: 12px;
+    padding: 0 8px;
+}}
 """
