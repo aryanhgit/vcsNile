@@ -1,12 +1,18 @@
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSizePolicy, QScrollArea
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
 
 from utils.helper import *
 from utils.state import AppState
 
+
 class Sidebar(QWidget):
+    """
+    Single QTreeWidget with three collapsible group headers, Local Branches, Remote Branches and Tags.
+    """
+
+    branch_clicked = Signal(str) 
 
     def __init__(self, state: AppState):
         super().__init__()
@@ -20,13 +26,13 @@ class Sidebar(QWidget):
         root.setSpacing(0)
 
         # Repo name header
-        header = QWidget()
-        header.setStyleSheet(f"background:{BG_PANEL};")
-        hl = QHBoxLayout(header)
+        hdr = QWidget()
+        hdr.setStyleSheet(f"background:{BG_PANEL};")
+        hl = QHBoxLayout(hdr)
         hl.setContentsMargins(14, 10, 14, 10)
 
-        self._name_lbl = label("No Repository", 14, TEXT_SECONDARY, 600)
-        self._branch_dot = label(TEXT_TERTIARY)
+        self._name_lbl   = label("No Repository", 14, TEXT_SECONDARY, 600)
+        self._branch_dot = dot_badge(TEXT_TERTIARY)
         self._branch_lbl = label("—", 11, TEXT_TERTIARY)
 
         hl.addWidget(self._name_lbl)
@@ -34,8 +40,26 @@ class Sidebar(QWidget):
         hl.addWidget(self._branch_dot)
         hl.addSpacing(4)
         hl.addWidget(self._branch_lbl)
-        root.addWidget(header)
+        root.addWidget(hdr)
         root.addWidget(h_separator())
+
+        # Single grouped QTreeWidget
+        self._tree = QTreeWidget()
+        self._tree.setObjectName("sidebarTree")
+        self._tree.setHeaderHidden(True)
+        self._tree.setRootIsDecorated(True)
+        self._tree.setIndentation(16)
+        self._tree.setAnimated(True)
+        self._tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._tree.itemClicked.connect(self._on_item_clicked)
+
+        # Pre-build the three permanent group headers
+        self._grp_local   = self._make_group("Local Branches", "⎇")
+        self._grp_remote  = self._make_group("Remote Branches", "⌥")
+        self._grp_tags    = self._make_group("Tags", "◇")
+        for grp in (self._grp_local, self._grp_remote, self._grp_tags):
+            self._tree.addTopLevelItem(grp)
+            grp.setExpanded(True)
 
         # Scrollable tree area
         scroll = QScrollArea()
@@ -43,31 +67,31 @@ class Sidebar(QWidget):
         scroll.setStyleSheet("background:transparent; border:none;")
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self._inner = QWidget()
-        self._inner.setStyleSheet(f"background:{BG_PANEL};")
-        self._vbox = QVBoxLayout(self._inner)
-        self._vbox.setContentsMargins(8, 0, 8, 8)
-        self._vbox.setSpacing(0)
-        self._populate([], [], [])
+        inner = QWidget()
+        inner.setStyleSheet(f"background:{BG_PANEL};")
+        il = QVBoxLayout(inner)
+        il.setContentsMargins(8, 4, 8, 8)
+        il.setSpacing(0)
+        il.addWidget(self._tree)
 
-        scroll.setWidget(self._inner)
+        scroll.setWidget(inner)
         root.addWidget(scroll)
 
         state.repo_changed.connect(self._on_repo_changed)
 
-    # ── Slot ──────────────────────────────────────────────────────────────────
-
+    # Slots
     def _on_repo_changed(self, repo):
+        """Rebuild tree content whenever a repo is loaded or closed."""
         if repo is None:
             self._name_lbl.setText("No Repository")
             self._name_lbl.setStyleSheet(
                 f"color:{TEXT_SECONDARY}; font-size:14px; font-weight:600; background:transparent;")
             self._branch_dot.setStyleSheet(f"background:{TEXT_TERTIARY}; border-radius:4px;")
             self._branch_lbl.setText("—")
-            self._populate([], [], [])
+            self._clear_groups()
             return
 
-        # Header
+        # Update header strip
         name = os.path.basename(repo.working_dir)
         self._name_lbl.setText(name)
         self._name_lbl.setStyleSheet(
@@ -78,70 +102,75 @@ class Sidebar(QWidget):
         self._branch_lbl.setStyleSheet(
             f"color:{ACCENT_GREEN}; font-size:11px; background:transparent;")
 
-        # Collect live data safely
-        try:    branches = [b.name for b in repo.branches]
-        except: branches = []
-
-        try:    tags = [t.name for t in repo.tags]
-        except: tags = []
+        # Collect live data
+        try:
+            local = [b.name for b in repo.branches]
+        except Exception:
+            local = []
 
         try:
-            raw = repo.git.stash("list")
-            stashes = [f"stash@{{{i}}}: {line.split(': ', 2)[-1]}"
-                       for i, line in enumerate(raw.splitlines()) if line]
-        except: stashes = []
+            # Flatten all remotes: each remote is its ref names ("origin/main")
+            remote = []
+            for r in repo.remotes:
+                for ref in r.refs:
+                    remote.append(ref.name)          # "origin/HEAD" ...
+        except Exception:
+            remote = []
 
-        self._populate(branches, tags, stashes)
+        try:
+            tags = [t.name for t in repo.tags]
+        except Exception:
+            tags = []
 
-    # ── Builder ───────────────────────────────────────────────────────────────
+        self._populate(local, remote, tags)
 
-    def _populate(self, branches: list, tags: list, stashes: list):
-        # Clear existing widgets
-        while self._vbox.count():
-            item = self._vbox.takeAt(0)
-            if item is None:
-                continue
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
+    def _on_item_clicked(self, item: QTreeWidgetItem, _col: int):
+        """Ignore group headers; emit branch_clicked for leaf items."""
+        if item.parent() is None:
+            return                             
+        name = item.text(0)
+        self.branch_clicked.emit(name)
 
+    # Builders
+    def _clear_groups(self):
+        for grp in (self._grp_local, self._grp_remote, self._grp_tags):
+            grp.takeChildren()
+
+    def _populate(self, local: list, remote: list, tags: list):
+        """Fill the three group headers with fresh child items."""
+        self._clear_groups()
         active = self._state.active_branch
 
-        # Branches
-        self._vbox.addWidget(section_label("Branches"))
-        b_rows = [(n, ACCENT_GREEN if n == active else TEXT_SECONDARY, n == active)
-                  for n in branches] or [("—", TEXT_TERTIARY, False)]
-        self._vbox.addWidget(self._make_tree(b_rows))
+        # Local branches highlight the active one
+        for name in local or ["(none)"]:
+            is_active = (name == active)
+            child = QTreeWidgetItem([name])
+            f = QFont(); f.setBold(is_active)
+            child.setFont(0, f)
+            child.setForeground(0, QColor(ACCENT_GREEN if is_active else TEXT_SECONDARY))
+            self._grp_local.addChild(child)
+
+        # Remote branches
+        for name in remote or ["(none)"]:
+            child = QTreeWidgetItem([name])
+            child.setForeground(0, QColor(TEXT_SECONDARY))
+            self._grp_remote.addChild(child)
 
         # Tags
-        self._vbox.addWidget(section_label("Tags"))
-        t_rows = [(n, TEXT_SECONDARY, False) for n in tags] or [("No tags", TEXT_TERTIARY, False)]
-        self._vbox.addWidget(self._make_tree(t_rows))
-
-        # Stashes
-        self._vbox.addWidget(section_label("Stashes"))
-        s_rows = [(n, TEXT_SECONDARY, False) for n in stashes] or [("No stashes", TEXT_TERTIARY, False)]
-        self._vbox.addWidget(self._make_tree(s_rows))
-
-        self._vbox.addStretch()
+        for name in tags or ["(none)"]:
+            child = QTreeWidgetItem([name])
+            child.setForeground(0, QColor(ACCENT_ORANGE))
+            self._grp_tags.addChild(child)
 
     @staticmethod
-    def _make_tree(rows: list) -> QTreeWidget:
-        tree = QTreeWidget()
-        tree.setHeaderHidden(True)
-        tree.setRootIsDecorated(False)
-        tree.setIndentation(0)
-        tree.setStyleSheet("background:transparent; border:none;")
-        tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+    def _make_group(title: str, icon: str) -> QTreeWidgetItem:
+        """Create a non-selectable top-level group header item."""
+        item = QTreeWidgetItem([f"  {icon}  {title}"])
+        f = QFont(); f.setPointSize(11); f.setBold(True)
 
-        for text, color, bold in rows:
-            it = QTreeWidgetItem([text])
-            f = QFont(); f.setBold(bold)
-            it.setFont(0, f)
-            it.setForeground(0, QColor(color))
-            tree.addTopLevelItem(it)
+        item.setFont(0, f)
+        item.setForeground(0, QColor(TEXT_TERTIARY))
 
-        # Resize to content
-        tree.setFixedHeight(len(rows) * 28 + 2)
-        return tree
-
+        # Prevent the group header itself from being selected as a branch
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+        return item

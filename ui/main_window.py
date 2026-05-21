@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
 
 from ui.resources.theme import STYLESHEET
+from ui.resources.constants import *
 
 from ui.widgets.sidebar import Sidebar
 from ui.widgets.central import CentralArea
@@ -37,6 +38,16 @@ class MainWindow(QMainWindow):
         splitter.setChildrenCollapsible(False)
 
         splitter.addWidget(Sidebar(state))
+        self._sidebar = Sidebar(state) 
+        self._sidebar.branch_clicked.connect(
+            lambda name: self.statusBar().showMessage(f"Branch: {name}", 4000)
+        )
+        self.statusBar().setStyleSheet(
+            f"background:{BG_PANEL}; color:{TEXT_TERTIARY};"
+            f" border-top:1px solid {SEPARATOR}; font-size:12px;"
+        )
+
+
         splitter.addWidget(CentralArea())
         splitter.addWidget(DetailsPanel(state))
 
@@ -153,3 +164,4 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(f"GitView | {os.path.basename(repo.working_dir)}")
         else:
             self.setWindowTitle("GitView")
+            self.statusBar().clearMessage()   
