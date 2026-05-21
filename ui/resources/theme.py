@@ -263,4 +263,23 @@ QStatusBar {{
     background: {BG_PANEL}; color: {TEXT_TERTIARY};
     border-top: 1px solid {SEPARATOR}; font-size: 12px; padding: 0 8px;
 }}
+
+
+
+/* ── Staging columns ── */
+#stagingColumn     {{ background: {BG_PANEL}; }}
+#stagingColHeader  {{ background: {BG_PANEL}; }}
+#stagingList {{
+    background: {BG_BASE}; border: none; outline: none;
+}}
+#stagingList::item {{
+    border-radius: 5px; padding: 0;
+}}
+#stagingList::item:hover    {{ background: {BG_HOVER}; }}
+#stagingList::item:selected {{ background: {ACCENT}; }}
+#stagingAction {{
+    background: {BG_HOVER}; border: none; border-radius: 4px;
+    font-size: 11px; padding: 0 8px;
+}}
+#stagingAction:hover {{ background: {SEPARATOR}; color: {TEXT_PRIMARY}; }}
 """

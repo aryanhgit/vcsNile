@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
 
         self._sidebar = Sidebar(state) 
         h_split.addWidget(self._sidebar)
-        h_split.addWidget(CentralArea())
+        h_split.addWidget(CentralArea(state))
         h_split.addWidget(DetailsPanel(state))
 
         h_split.setSizes([220, 760, 240])

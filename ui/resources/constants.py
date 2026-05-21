@@ -11,3 +11,14 @@ TEXT_SECONDARY = "#8E8E93"
 TEXT_TERTIARY = "#636366"
 
 MAX_RECENT = 8
+
+
+# Status char : (badge glyph, badge colour, tooltip label)
+STATUS_META: dict[str, tuple[str, str, str]] = {
+    "M": ("M", ACCENT_ORANGE, "modified"),
+    "A": ("+", ACCENT_GREEN, "added"),
+    "D": ("−", ACCENT_RED, "deleted"),
+    "R": ("R", ACCENT, "renamed"),
+    "?": ("+", ACCENT_GREEN, "untracked"),
+    "C": ("·", TEXT_TERTIARY, "committed"),
+}
