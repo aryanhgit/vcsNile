@@ -284,6 +284,8 @@ QStatusBar {{
 #stagingAction:hover {{ background: {SEPARATOR}; color: {TEXT_PRIMARY}; }}
 
 
+
+
 /* ── Object Explorer ── */
 #objInputBar {{
     background: {BG_PANEL}; border-bottom: 1px solid {SEPARATOR};
@@ -320,4 +322,48 @@ QStatusBar {{
     font-size: 12px; padding: 8px 12px;
     selection-background-color: {ACCENT};
 }}
+
+
+
+/* ── Time Travel panel ── */
+#ttCard {{
+    background: {BG_PANEL};
+    border: 1px solid {SEPARATOR};
+    border-radius: 10px;
+}}
+#ttDesc {{
+    color: {TEXT_SECONDARY}; font-size: 12px; background: transparent;
+}}
+#ttInput {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR}; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-size: 12px; padding: 5px 10px; min-height: 28px;
+    selection-background-color: {ACCENT};
+}}
+#ttInput:focus {{ border-color: {ACCENT}; }}
+#ttCombo {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR}; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-size: 12px; padding: 3px 8px; min-height: 28px;
+}}
+#ttCombo QAbstractItemView {{
+    background: {BG_PANEL}; border: 1px solid {SEPARATOR};
+    selection-background-color: {ACCENT}; color: {TEXT_PRIMARY};
+}}
+#ttWarning {{ color: {ACCENT_ORANGE}; font-size: 11px; background: transparent; }}
+#ttResultArea {{
+    background: {BG_BASE}; border: none; outline: none;
+    color: {TEXT_SECONDARY};
+    font-family: "SF Mono","Menlo","Consolas",monospace;
+    font-size: 11px; padding: 6px 10px;
+}}
+QRadioButton {{
+    color: {TEXT_PRIMARY}; font-size: 12px; background: transparent; spacing: 6px;
+}}
+QRadioButton::indicator {{ width: 14px; height: 14px; }}
+QCheckBox {{
+    color: {TEXT_PRIMARY}; font-size: 12px; background: transparent; spacing: 6px;
+}}
+QCheckBox::indicator {{
+    width: 14px; height: 14px; border-radius: 3px; border: 1px solid {SEPARATOR};
+}}
+QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
 """
