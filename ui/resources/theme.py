@@ -366,4 +366,22 @@ QCheckBox::indicator {{
     width: 14px; height: 14px; border-radius: 3px; border: 1px solid {SEPARATOR};
 }}
 QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
+
+
+
+
+/* ── DAG Canvas ── */
+#dagCanvas {{
+    background: {BG_BASE}; border: none; outline: none;
+}}
+#dagCheckoutBtn {{
+    background: {ACCENT_GREEN}; border: none; border-radius: 5px;
+    color: white; font-size: 11px; font-weight: 600;
+    padding: 0 12px;
+}}
+#dagCheckoutBtn:hover   {{ background: #27bd4e; }}
+#dagCheckoutBtn:pressed {{ background: #1a9e40; }}
+#dagEmptyHint {{
+    color: {TEXT_TERTIARY}; font-size: 13px; background: transparent;
+}}
 """
