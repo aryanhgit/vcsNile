@@ -14,6 +14,7 @@ from ui.widgets.details import DetailsPanel
 from ui.widgets.toolbar import AppToolBar
 from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
+from ui.widgets.travel import TimeTravelPanel
 
 import git
 from git.exc import InvalidGitRepositoryError, NoSuchPathError
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         v_split.setSizes([560, 180])
 
         self._build_menu()
+        self._time_travel = TimeTravelPanel(state, parent=self)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, AppToolBar(state))
 
         self.setCentralWidget(v_split)
@@ -83,6 +85,15 @@ class MainWindow(QMainWindow):
         fm.addAction(open_act)
 
         fm.addSeparator()
+
+        # Git menu
+        gm = mb.addMenu("Git")
+
+        tt_act = QAction("Time Travel…", self)
+        tt_act.setShortcut(QKeySequence("Ctrl+T"))
+        tt_act.setToolTip("Checkout, reset, or revert — Phase 4")
+        tt_act.triggered.connect(self._open_time_travel)
+        gm.addAction(tt_act)
 
         # Recent Repositories sub-menu, rebuilt each time it's opened
         self._recent_menu = QMenu("Recent Repositories", self)
@@ -208,3 +219,9 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowTitle("GitView")
             self.statusBar().clearMessage()   
+
+
+    def _open_time_travel(self):
+        self._time_travel.show()
+        self._time_travel.raise_()
+        self._time_travel.activateWindow()
