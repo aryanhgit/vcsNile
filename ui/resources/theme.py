@@ -282,4 +282,42 @@ QStatusBar {{
     font-size: 11px; padding: 0 8px;
 }}
 #stagingAction:hover {{ background: {SEPARATOR}; color: {TEXT_PRIMARY}; }}
+
+
+/* ── Object Explorer ── */
+#objInputBar {{
+    background: {BG_PANEL}; border-bottom: 1px solid {SEPARATOR};
+}}
+#objShaInput {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR}; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-family: "SF Mono","Menlo","Consolas",monospace;
+    font-size: 12px; padding: 4px 10px; selection-background-color: {ACCENT};
+}}
+#objShaInput:focus {{ border-color: {ACCENT}; }}
+#objLookupBtn, #objBackBtn {{
+    background: {BG_HOVER}; border: none; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-size: 12px; padding: 0 12px;
+}}
+#objLookupBtn:hover {{ background: {ACCENT}; color: white; }}
+#objBackBtn:hover   {{ background: {BG_HOVER}; color: {TEXT_PRIMARY}; }}
+#objBackBtn:disabled {{ color: {TEXT_TERTIARY}; }}
+#objCrumbBar {{ background: {BG_PANEL}; border-bottom: 1px solid {SEPARATOR}; }}
+#objTreeView {{
+    background: {BG_BASE}; border: none; outline: none;
+    alternate-background-color: {BG_HOVER};
+}}
+#objTreeView::item:hover    {{ background: {BG_HOVER}; }}
+#objTreeView::item:selected {{ background: {ACCENT}; color: white; }}
+#objTreeView QHeaderView::section {{
+    background: {BG_PANEL}; color: {TEXT_TERTIARY}; font-size: 11px;
+    font-weight: 600; padding: 4px 8px; border: none;
+    border-bottom: 1px solid {SEPARATOR};
+}}
+#objBlobEditor, #objCommitMsg, #objTagMsg {{
+    background: {BG_BASE}; border: none; outline: none;
+    color: {TEXT_SECONDARY};
+    font-family: "SF Mono","Menlo","Consolas",monospace;
+    font-size: 12px; padding: 8px 12px;
+    selection-background-color: {ACCENT};
+}}
 """
