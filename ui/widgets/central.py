@@ -3,9 +3,7 @@ from PySide6.QtWidgets import QTabWidget
 
 from ui.widgets.dag import DagPlaceholder
 from ui.widgets.staging import StagingWidget
-from ui.widgets.explorer import ObjectExplorer
-
-from utils.helper import *
+from ui.widgets.explorer import ObjectExplorerTab
 
 class CentralArea(QTabWidget):
     def __init__(self, state: AppState):
@@ -14,4 +12,4 @@ class CentralArea(QTabWidget):
 
         self.addTab(DagPlaceholder(), "Commit Graph")
         self.addTab(StagingWidget(state), "Staging")
-        self.addTab(ObjectExplorer(), "Objects")
+        self.addTab(ObjectExplorerTab(state), "Objects")
