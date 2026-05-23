@@ -1,80 +1,28 @@
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QSplitter,
-    QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget, QTreeWidgetItem,
-    QTabWidget, QTextEdit, QPlainTextEdit, QLineEdit, QFrame, QToolBar,
-    QPushButton, QSizePolicy, QScrollArea, QListWidget, QListWidgetItem,
-    QStackedWidget, QHeaderView,
-    QRadioButton, QCheckBox, QButtonGroup, QComboBox,
-    QGraphicsView, QGraphicsScene, QGraphicsItem,         # ← add
-    QMenuBar, QMenu, QFileDialog, QMessageBox,
-    QDialog, QDialogButtonBox,
+from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, 
+    QPushButton, QGraphicsView, QGraphicsScene, QGraphicsItem
 )
 from PySide6.QtCore import (
-    Qt, QSize, QSettings, Signal, QObject,
-    QPropertyAnimation, QEasingCurve, QPoint, QPointF,   # ← add
+    Qt, QPropertyAnimation, QEasingCurve, QPointF
 )
 from PySide6.QtGui import (
-    QFont, QColor, QAction, QKeySequence,
-    QPainter, QPen, QBrush,                              # ← add
+    QFont, QFontMetrics, QColor,
+    QPainter, QPen, QBrush, QPainterPath,
 )
 
-from ui.resources.theme import (ACCENT, ACCENT_GREEN, ACCENT_ORANGE, SEPARATOR, TEXT_SECONDARY, TEXT_TERTIARY)
+from ui.resources.theme import (ACCENT, ACCENT_GREEN, ACCENT_ORANGE, ACCENT_RED, SEPARATOR, TEXT_SECONDARY, TEXT_TERTIARY)
 from utils.helper import label
 from utils.state import AppState
+from git_backend.dagmodel import DAGLayout
 
-class DagPlaceholder(QWidget):
-    """Stand-in for the DAG canvas (Phase 3: QGraphicsScene)."""
-
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-
-        canvas = QFrame()
-        canvas.setObjectName("canvas")
-        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        c_layout = QVBoxLayout(canvas)
-        c_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        ico = label("◆", 32, TEXT_TERTIARY)
-        ico.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        msg = label("DAG Canvas", 15, TEXT_TERTIARY, 500)
-        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sub = label("QGraphicsScene — Phase 3", 12, TEXT_TERTIARY)
-        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        c_layout.addWidget(ico)
-        c_layout.addWidget(msg)
-        c_layout.addWidget(sub)
-        layout.addWidget(canvas)
-
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# DAG canvas  (Phase 3 scaffold + Phase 4.2 HEAD animation)
-# ─────────────────────────────────────────────────────────────────────────────
 
 class HeadBadge(QWidget):
     """
     Floating overlay that represents the HEAD pointer on the DAG canvas.
-
-    Rendered as a small pill sitting above the current HEAD commit node.
-    Animated via QPropertyAnimation on its 'pos' Q_PROPERTY whenever HEAD
-    moves — making the abstract concept of HEAD movement tangible.
-
-    Mouse events are forwarded through (WA_TransparentForMouseEvents) so
-    the badge never blocks clicks on the nodes beneath it.
-
-        ┌──────────┐
-        │  ◆ HEAD  │       ← this widget (parent = QGraphicsView)
-        └────┬─────┘
-             │  (NODE_R px gap)
-             ●             ← commit circle drawn by QGraphicsScene
     """
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setFixedSize(70, 24)
 
         lay = QHBoxLayout(self)
@@ -98,33 +46,24 @@ class HeadBadge(QWidget):
 
 class DagCanvas(QGraphicsView):
     """
-    Commit graph canvas — single-lane MVP for Phase 3 scaffold.
-
-    Layout
-    ------
-    Each commit is a filled circle at (X=COL_X, Y=index×ROW_H).
-    Edges are straight lines from child to parent.
-    Branch/tag labels float to the right of the SHA abbreviation.
-
-    HEAD badge (Step 4.2)
-    ---------------------
-    A HeadBadge widget is parented to the view (not the scene) so it
-    floats on top and can be animated with QPropertyAnimation.
-
-    Animation sequence
-    ------------------
-    1.  User selects a node  →  "Checkout here" overlay appears.
-    2.  User clicks it       →  repo.git.checkout(sha).
-    3.  state.set_repo()     →  _on_repo_changed fires.
-    4.  _rebuild() redraws the scene with the new HEAD coloured.
-    5.  _animate_badge() slides the badge from the old node to the new one.
-    6.  finished signal      →  badge.raise_() to stay on top.
+    Commit graph canvas.
     """
 
-    NODE_R = 9      # commit circle radius  (px)
-    ROW_H  = 50     # vertical pitch between rows  (px)
-    COL_X  = 48     # single-lane X centre  (px)
-    MAX_C  = 120    # maximum commits to render
+    NODE_R = 9
+    ROW_H  = 50
+    COL_X  = 48
+    COL_W  = 28
+    MAX_C  = 120
+
+    LANE_PALETTE = [
+        "#0A84FF",
+        "#30D158",
+        "#FF9F0A",
+        "#BF5AF2",
+        "#32ADE6",
+        "#FF453A",
+        "#FFD60A",
+    ]
 
     def __init__(self, state: AppState):
         self._scene = QGraphicsScene()
@@ -132,18 +71,20 @@ class DagCanvas(QGraphicsView):
         self._state = state
 
         self.setObjectName("dagCanvas")
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
-        # sha → scene-space centre (QPointF)
         self._nodes: dict[str, QPointF] = {}
-        self._head_sha: str | None = None     # where HEAD was before last change
+        self._head_sha: str | None = None
         self._selected_sha: str | None = None
 
-        # ── Floating overlays (parented to the view widget, not the scene) ────
+        self._overlays: list = []                                          # ← add
+        state.reset_preview_requested.connect(self._on_preview_reset)     # ← add
+        state.reset_preview_cleared.connect(self._clear_overlays)         # ← add
+
         self._badge = HeadBadge(parent=self)
 
         self._co_btn = QPushButton("Checkout here", parent=self)
@@ -152,7 +93,6 @@ class DagCanvas(QGraphicsView):
         self._co_btn.hide()
         self._co_btn.clicked.connect(self._on_checkout_clicked)
 
-        # ── QPropertyAnimation on QWidget.pos ────────────────────────────────
         self._anim = QPropertyAnimation(self._badge, b"pos")
         self._anim.setDuration(550)
         self._anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
@@ -161,7 +101,6 @@ class DagCanvas(QGraphicsView):
         self._scene.selectionChanged.connect(self._on_selection_changed)
         state.repo_changed.connect(self._on_repo_changed)
 
-    # ── Repo change → rebuild + animate ──────────────────────────────────────
 
     def _on_repo_changed(self, repo):
         self._scene.clear()
@@ -180,56 +119,37 @@ class DagCanvas(QGraphicsView):
             new_sha = None
 
         self._rebuild(repo, new_sha)
-        self._animate_badge(self._head_sha, new_sha)
         self._head_sha = new_sha
 
-        # Re-connect after scene.clear() nuked the old connections
         self._scene.selectionChanged.connect(self._on_selection_changed)
 
-    # ── Scene construction ────────────────────────────────────────────────────
 
     def _rebuild(self, repo, head_sha: "str | None"):
-        """Draw commit nodes, edges, and branch/tag labels from GitPython data."""
         try:
-            commits = list(repo.iter_commits("--all", max_count=self.MAX_C))
+            nodes, col_count = DAGLayout().build(repo)
         except Exception:
             return
 
-        if not commits:
+        if not nodes:
             self._draw_empty_hint("Repository has no commits yet.")
             return
 
-        # Build lookup tables
-        branch_map: dict[str, list[str]] = {}
-        tag_map:    dict[str, list[str]] = {}
-        try:
-            for b in repo.branches:
-                branch_map.setdefault(b.commit.hexsha, []).append(b.name)
-            for t in repo.tags:
-                tag_map.setdefault(t.commit.hexsha, []).append(t.name)
-        except Exception:
-            pass
+        col_colors: dict[int, QColor] = {
+            c: QColor(self.LANE_PALETTE[c % len(self.LANE_PALETTE)])
+            for c in range(col_count)
+        }
 
-        # ── Pass 1: place nodes ───────────────────────────────────────────────
-        for i, commit in enumerate(commits):
-            x = float(self.COL_X)
-            y = 20.0 + i * self.ROW_H
-            self._nodes[commit.hexsha] = QPointF(x, y)
-            self._draw_node(commit, x, y, head_sha, branch_map, tag_map)
+        for node in nodes:
+            x = float(self.COL_X + node.x * self.COL_W)
+            y = 20.0 + node.y * self.ROW_H
+            self._nodes[node.sha] = QPointF(x, y)
+            self._draw_node_from(node, x, y, head_sha, col_colors)
 
-        # ── Pass 2: draw edges ────────────────────────────────────────────────
-        edge_pen = QPen(QColor(SEPARATOR), 1.5)
-        for commit in commits:
-            cx, cy = self._nodes[commit.hexsha].x(), self._nodes[commit.hexsha].y()
-            for parent in commit.parents:
-                if parent.hexsha in self._nodes:
-                    px, py = (self._nodes[parent.hexsha].x(),
-                              self._nodes[parent.hexsha].y())
-                    self._scene.addLine(cx, cy + self.NODE_R,
-                                        px, py - self.NODE_R, edge_pen)
+        self._draw_edges(nodes, col_colors)
 
-        # Expand scene rect so the view scrolls correctly
-        self._scene.setSceneRect(self._scene.itemsBoundingRect().adjusted(-20, -20, 80, 40))
+        self._scene.setSceneRect(
+            self._scene.itemsBoundingRect().adjusted(-20, -20, 120, 40)
+        )
 
     def _draw_node(self, commit, x: float, y: float,
                    head_sha: "str | None",
@@ -248,8 +168,8 @@ class DagCanvas(QGraphicsView):
             QBrush(fill_col),
         )
         ellipse.setData(0, sha)
-        ellipse.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        ellipse.setCursor(Qt.PointingHandCursor)
+        ellipse.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        ellipse.setCursor(Qt.CursorShape.PointingHandCursor)
 
         mono = QFont()
         mono.setFamilies(["SF Mono", "Menlo", "Consolas"])
@@ -262,25 +182,24 @@ class DagCanvas(QGraphicsView):
             t = self._scene.addText(txt, font)
             t.setDefaultTextColor(QColor(color))
             t.setPos(px, py)
-            t.setAcceptedMouseButtons(Qt.NoButton)
+            t.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
             return t
 
-        # Short SHA
         cursor_x = x + r + 8
         _text(sha[:7], TEXT_SECONDARY, mono, cursor_x, y - 9)
         cursor_x += 52
 
-        # Branch labels (green pill-style)
+        # Branch labels
         for name in branch_map.get(sha, []):
             item = _text(f" {name} ", ACCENT_GREEN, ui_font, cursor_x, y - 9)
             cursor_x += item.boundingRect().width() + 4
 
-        # Tag labels (orange)
+        # Tag labels
         for name in tag_map.get(sha, []):
             item = _text(f" {name} ", ACCENT_ORANGE, ui_font, cursor_x, y - 9)
             cursor_x += item.boundingRect().width() + 4
 
-        # Commit message (truncated, tertiary colour)
+        # Commit message
         msg = commit.message.split("\n")[0][:52]
         _text(msg, TEXT_TERTIARY, ui_font, x + r + 8, y + 1)
 
@@ -289,55 +208,141 @@ class DagCanvas(QGraphicsView):
         t.setDefaultTextColor(QColor(TEXT_TERTIARY))
         t.setFont(QFont())
         t.setPos(40, 40)
-        t.setAcceptedMouseButtons(Qt.NoButton)
+        t.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
 
-    # ── HEAD badge animation ──────────────────────────────────────────────────
 
-    def _animate_badge(self, old_sha: "str | None", new_sha: "str | None"):
-        """
-        Slide the HEAD badge from the old commit position to the new one.
+    def _draw_node_from(self, node, x: float, y: float, 
+                        head_sha: "str | None", col_colors: dict):
+        """Render one CommitNode: circle + SHA + message + label pills."""
+        is_head   = (node.sha == head_sha)
+        lane_col  = col_colors.get(node.x, QColor(ACCENT))
 
-        First load (old_sha is None)  →  place immediately, no animation.
-        Same commit (no change)       →  no-op.
-        Different commits             →  QPropertyAnimation over 550 ms.
-        """
-        if not new_sha or new_sha not in self._nodes:
-            self._badge.hide()
-            return
+        if is_head:
+            fill_col = QColor(ACCENT_GREEN)
+            r        = self.NODE_R + 2
+        else:
+            fill_col = lane_col
+            r        = self.NODE_R
 
-        end_pos = self._badge_pos_for(new_sha)
+        ring_col = fill_col.darker(150)
 
-        if old_sha is None or old_sha not in self._nodes or old_sha == new_sha:
-            # First paint — teleport, no animation
-            self._badge.move(end_pos)
-            self._badge.show()
-            self._badge.raise_()
-            return
-
-        start_pos = self._badge_pos_for(old_sha)
-
-        # Stop any in-flight animation before starting a new one
-        if self._anim.state() == QPropertyAnimation.State.Running:
-            self._anim.stop()
-
-        self._badge.move(start_pos)
-        self._badge.show()
-        self._badge.raise_()
-
-        self._anim.setStartValue(start_pos)
-        self._anim.setEndValue(end_pos)
-        self._anim.start()
-
-    def _badge_pos_for(self, sha: str) -> QPoint:
-        """View-space top-left corner for the badge centred above commit sha."""
-        scene_pt  = self._nodes[sha]
-        view_pt   = self.mapFromScene(scene_pt)
-        return QPoint(
-            view_pt.x() - self._badge.width() // 2,
-            view_pt.y() - self._badge.height() - self.NODE_R - 4,
+        ellipse = self._scene.addEllipse(
+            x - r, y - r, r * 2, r * 2,
+            QPen(ring_col, 1.5),
+            QBrush(fill_col),
         )
+        ellipse.setData(0, node.sha)
+        ellipse.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        ellipse.setCursor(Qt.CursorShape.PointingHandCursor)
+        ellipse.setZValue(2)
 
-    # ── Selection + checkout overlay ─────────────────────────────────────────
+        mono = QFont()
+        mono.setFamilies(["SF Mono", "Menlo", "Consolas"])
+        mono.setPointSize(10)
+
+        ui_font = QFont()
+        ui_font.setPointSize(10)
+
+        text_x = x + self.NODE_R + 10
+
+        sha_t = self._scene.addText(node.short_sha, mono)
+        sha_t.setDefaultTextColor(QColor(TEXT_SECONDARY))
+        sha_t.setPos(text_x, y - 9)
+        sha_t.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+        sha_t.setZValue(3)
+
+        cursor_x = text_x + 52
+        
+
+        for lbl_text in node.labels:
+            if lbl_text == "HEAD":
+                color = ACCENT
+                display = "HEAD"
+            elif lbl_text.startswith("tag: "):
+                color   = ACCENT_ORANGE
+                display = lbl_text[5:]
+            else:
+                color   = ACCENT_GREEN
+                display = lbl_text.lstrip("\u25cf").strip()
+            cursor_x = self._pill_badge(display, cursor_x, y - 1, color)
+
+        msg_t = self._scene.addText(node.message[:56], ui_font)
+        msg_t.setDefaultTextColor(QColor(TEXT_TERTIARY))
+        msg_t.setPos(text_x, y + 2)
+        msg_t.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+        msg_t.setZValue(3)
+
+    def _draw_edges(self, nodes: list, col_colors: dict):
+        """
+        Draw all parent edges.
+
+        1.Same-column parent : Straight QGraphicsLineItem.
+        2.Cross-column parent : cubic-bezier QGraphicsPathItem.
+        """
+        for node in nodes:
+            if node.sha not in self._nodes:
+                continue
+            cp = self._nodes[node.sha]
+            cx, cy = cp.x(), cp.y()
+
+            lane_col = col_colors.get(node.x, QColor(SEPARATOR))
+            pen = QPen(lane_col, 1.8)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+
+            for p_sha, p_col in zip(node.parent_shas, node.parent_cols):
+                if p_sha not in self._nodes:
+                    continue
+                pp = self._nodes[p_sha]
+                px, py = pp.x(), pp.y()
+
+                if node.x == p_col:
+                    item = self._scene.addLine(
+                        cx, cy + self.NODE_R,
+                        px, py - self.NODE_R,
+                        pen,
+                    )
+                else:
+                    path = QPainterPath(QPointF(cx, cy + self.NODE_R))
+                    mid_y = (cy + py) / 2.0
+                    path.cubicTo(
+                        QPointF(cx, mid_y),
+                        QPointF(px, mid_y),
+                        QPointF(px, py - self.NODE_R),
+                    )
+                    item = self._scene.addPath(path, pen)
+
+                item.setZValue(1)
+
+    def _pill_badge(self, text: str, x: float, y: float, color: str) -> float:
+        """
+        Draw a rounded-rect pill label at scene position (x, y-centre).
+        """
+        font = QFont()
+        font.setPointSize(9)
+
+        fm  = QFontMetrics(font)
+        tw  = fm.horizontalAdvance(text)
+        pw, ph = tw + 10, 15
+
+        bg = QColor(color)
+        bg.setAlpha(38)
+        border = QColor(color)
+
+        pill_path = QPainterPath()
+        pill_path.addRoundedRect(x, y - ph / 2, pw, ph, ph / 2, ph / 2)
+
+        pill = self._scene.addPath(pill_path, QPen(border, 0.9), QBrush(bg))
+        pill.setZValue(3)
+        pill.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+
+        t = self._scene.addText(text, font)
+        t.setDefaultTextColor(border)
+        t.setPos(x + 5, y - ph / 2 + 0.5)
+        t.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+        t.setZValue(4)
+
+        return x + pw + 4
+
 
     def _on_selection_changed(self):
         selected = [i for i in self._scene.selectedItems() if i.data(0)]
@@ -348,7 +353,6 @@ class DagCanvas(QGraphicsView):
 
         sha = selected[0].data(0)
         if sha == self._head_sha:
-            # HEAD is already here — no point offering checkout
             self._co_btn.hide()
             return
 
@@ -375,20 +379,14 @@ class DagCanvas(QGraphicsView):
 
         try:
             repo.git.checkout(sha)
-            # set_repo re-emits repo_changed → _on_repo_changed → _animate_badge
             self._state.set_repo(repo)
             self._state.logger.log(f"Checked out {sha[:12]} (detached HEAD)", "OK  ")
         except Exception as exc:
             self._state.logger.log(f"Checkout failed: {exc}", "ERR ")
 
-    # ── Overlay repositioning on resize ──────────────────────────────────────
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # Keep badge above the correct node after the view is resized
-        if self._head_sha and self._head_sha in self._nodes:
-            self._badge.move(self._badge_pos_for(self._head_sha))
-        # Keep checkout button near the selected node
         if self._selected_sha and self._selected_sha in self._nodes:
             scene_pt = self._nodes[self._selected_sha]
             view_pt  = self.mapFromScene(scene_pt)
@@ -396,3 +394,63 @@ class DagCanvas(QGraphicsView):
                 view_pt.x() + self.NODE_R + 8,
                 view_pt.y() - self._co_btn.height() // 2,
             )
+
+
+    def _on_preview_reset(self, target_sha: str, mode: str):
+        """
+        Overlay visual rings on the DAG to preview which commits would be
+        removed by a reset to target_sha.
+
+        Red ring   = commit removed from branch (unreachable after reset).
+        Orange ring = target commit (becomes the new HEAD / branch tip).
+
+        Does NOT modify the scene's permanent nodes — overlays sit at
+        z-value 10 and are removed by _clear_overlays().
+        """
+        self._clear_overlays()
+        repo = self._state.repo
+        if repo is None:
+            return
+
+        # Commits strictly between HEAD and target (exclusive of target itself)
+        try:
+            head_sha   = repo.head.commit.hexsha
+            to_remove  = [
+                c.hexsha
+                for c in repo.iter_commits(f"{target_sha}..{head_sha}")
+            ]
+        except Exception:
+            return
+
+        r = self.NODE_R + 5
+
+        # Red semi-transparent ring over each commit being removed
+        red_fill   = QColor(255, 69,  58,  50)
+        red_border = QColor(ACCENT_RED)
+        for sha in to_remove:
+            if sha in self._nodes:
+                c    = self._nodes[sha]
+                item = self._scene.addEllipse(
+                    c.x() - r, c.y() - r, r * 2, r * 2,
+                    QPen(red_border, 2.5),
+                    QBrush(red_fill),
+                )
+                item.setZValue(10)
+                self._overlays.append(item)
+
+        # Orange ring on target — marks where branch will land
+        if target_sha in self._nodes:
+            c    = self._nodes[target_sha]
+            item = self._scene.addEllipse(
+                c.x() - r, c.y() - r, r * 2, r * 2,
+                QPen(QColor(ACCENT_ORANGE), 2.5),
+                QBrush(QColor(255, 159, 10, 40)),
+            )
+            item.setZValue(10)
+            self._overlays.append(item)
+
+    def _clear_overlays(self):
+        """Remove all preview overlay items from the scene without rebuilding it."""
+        for item in self._overlays:
+            self._scene.removeItem(item)
+        self._overlays.clear()

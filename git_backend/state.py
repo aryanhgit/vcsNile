@@ -11,6 +11,9 @@ class AppState(QObject):
     """
 
     repo_changed = Signal(object)
+    reset_preview_requested = Signal(str, str)   # (target_sha, mode) ← add
+    reset_preview_cleared   = Signal()            # ← add
+
 
     def __init__(self):
         super().__init__()

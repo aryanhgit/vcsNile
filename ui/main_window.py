@@ -14,7 +14,7 @@ from ui.widgets.details import DetailsPanel
 from ui.widgets.toolbar import AppToolBar
 from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
-from ui.widgets.travel import TimeTravelPanel
+from ui.widgets.travel import TimeTravelPanel, ResetVisualizerPanel
 
 import git
 from git.exc import InvalidGitRepositoryError, NoSuchPathError
@@ -71,6 +71,15 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(v_split)
 
+        # In __init__, after self._time_travel = ...
+        self._reset_vis = ResetVisualizerPanel(state, parent=self)   # ← add
+
+        # New method after _open_time_travel:
+    def _open_reset_visualizer(self):
+        self._reset_vis.show()
+        self._reset_vis.raise_()
+        self._reset_vis.activateWindow()
+
 
     # Menu bar
     def _build_menu(self):
@@ -94,6 +103,11 @@ class MainWindow(QMainWindow):
         tt_act.setToolTip("Checkout, reset, or revert — Phase 4")
         tt_act.triggered.connect(self._open_time_travel)
         gm.addAction(tt_act)
+
+        rv_act = QAction("Reset Visualizer…", self)
+        rv_act.setToolTip("Preview and confirm git reset — Phase 4")
+        rv_act.triggered.connect(self._open_reset_visualizer)
+        gm.addAction(rv_act)
 
         # Recent Repositories sub-menu, rebuilt each time it's opened
         self._recent_menu = QMenu("Recent Repositories", self)

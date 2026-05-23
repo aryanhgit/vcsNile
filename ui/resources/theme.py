@@ -384,4 +384,54 @@ QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
 #dagEmptyHint {{
     color: {TEXT_TERTIARY}; font-size: 13px; background: transparent;
 }}
+
+
+
+
+/* ── Reset visualizer ── */
+#resetDagPreview {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR};
+    border-radius: 8px;
+}}
+#resetDiagram {{ background: transparent; }}
+#resetConfirmBtn {{
+    background: {ACCENT_RED}; border: none; border-radius: 6px;
+    color: white; font-size: 12px; font-weight: 600; padding: 0 16px;
+}}
+#resetConfirmBtn:hover   {{ background: #e03328; }}
+#resetConfirmBtn:pressed {{ background: #bf2a22; }}
+#resetWarnBox {{
+    background: rgba(255,69,58,0.12);
+    border: 1px solid {ACCENT_RED};
+    border-radius: 6px;
+}}
+#resetSummaryLabel {{ font-size: 12px; font-weight: 500; background: transparent; }}
+#resetCancelBtn {{
+    background: {BG_HOVER}; border: none; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-size: 12px; padding: 0 16px;
+}}
+#resetCancelBtn:hover {{ background: {SEPARATOR}; }}
+
+#rvTargetInput {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR}; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-family: "SF Mono","Menlo",monospace;
+    font-size: 12px; padding: 5px 10px; min-height: 28px;
+    selection-background-color: {ACCENT};
+}}
+#rvTargetInput:focus {{ border-color: {ACCENT}; }}
+#rvPreviewBtn {{
+    background: {BG_HOVER}; border: none; border-radius: 6px;
+    color: {TEXT_PRIMARY}; font-size: 12px; padding: 0 14px; min-height: 28px;
+}}
+#rvPreviewBtn:hover {{ background: {ACCENT}; color: white; }}
+#rvConfirmBtn {{
+    background: {ACCENT_RED}; border: none; border-radius: 6px;
+    color: white; font-size: 13px; font-weight: 600; padding: 0 20px; min-height: 36px;
+}}
+#rvConfirmBtn:hover    {{ background: #d93c33; }}
+#rvConfirmBtn:disabled {{ background: {BG_HOVER}; color: {TEXT_TERTIARY}; }}
+#rvWarning {{ color: {ACCENT_ORANGE}; font-size: 11px; background: transparent; }}
+#rvModeCard {{
+    background: {BG_PANEL}; border-radius: 8px; border: 1px solid {SEPARATOR};
+}}
 """

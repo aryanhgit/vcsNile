@@ -1,10 +1,9 @@
 from git_backend.state import AppState
 from PySide6.QtWidgets import QTabWidget
 
-from ui.widgets.dag import DagPlaceholder
-from ui.widgets.staging import StagingWidget
-from ui.widgets.explorer import ObjectExplorerTab
 from ui.widgets.dag import DagCanvas
+from ui.widgets.explorer import ObjectExplorerTab
+from ui.widgets.staging import StagingWidget
 
 class CentralArea(QTabWidget):
     def __init__(self, state: AppState):
