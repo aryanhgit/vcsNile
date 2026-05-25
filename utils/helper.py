@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QLabel, QFrame)
-from ui.resources.constants import *
+from ui.resources.constants import SEPARATOR, TEXT_PRIMARY, TEXT_TERTIARY
 
 def label(text: str, size=13, color=TEXT_PRIMARY, weight=400) -> QLabel:
     lbl = QLabel(text)
