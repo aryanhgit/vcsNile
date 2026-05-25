@@ -6,12 +6,11 @@ from PySide6.QtGui import QAction, QKeySequence
 from git_backend.recent_repos import RecentRepos
 from git_backend.state import AppState
 from ui.resources.theme import STYLESHEET
-from ui.resources.constants import *
-
+from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
+                                    ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)
 from ui.widgets.sidebar import Sidebar
 from ui.widgets.central import CentralArea
 from ui.widgets.details import DetailsPanel
-from ui.widgets.toolbar import AppToolBar
 from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
 from ui.widgets.travel import TimeTravelPanel, ResetVisualizerPanel
@@ -67,14 +66,12 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self._time_travel = TimeTravelPanel(state, parent=self)
-        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, AppToolBar(state))
 
         self.setCentralWidget(v_split)
 
-        # In __init__, after self._time_travel = ...
-        self._reset_vis = ResetVisualizerPanel(state, parent=self)   # ← add
+        self._reset_vis = ResetVisualizerPanel(state, parent=self)
 
-        # New method after _open_time_travel:
+
     def _open_reset_visualizer(self):
         self._reset_vis.show()
         self._reset_vis.raise_()
@@ -100,12 +97,10 @@ class MainWindow(QMainWindow):
 
         tt_act = QAction("Time Travel…", self)
         tt_act.setShortcut(QKeySequence("Ctrl+T"))
-        tt_act.setToolTip("Checkout, reset, or revert — Phase 4")
         tt_act.triggered.connect(self._open_time_travel)
         gm.addAction(tt_act)
 
         rv_act = QAction("Reset Visualizer…", self)
-        rv_act.setToolTip("Preview and confirm git reset — Phase 4")
         rv_act.triggered.connect(self._open_reset_visualizer)
         gm.addAction(rv_act)
 
@@ -125,10 +120,7 @@ class MainWindow(QMainWindow):
         close_act.triggered.connect(lambda: self._state.set_repo(None))
         fm.addAction(close_act)
 
-        # View menu (stubs wired to central tabs later)
         vm = mb.addMenu("View")
-        for title in ("Commit Graph", "Staging Area", "Object Explorer"):
-            vm.addAction(QAction(title, self))
    
         vm.addSeparator()
         toggle_log = QAction("Toggle Log Panel", self)
@@ -150,7 +142,7 @@ class MainWindow(QMainWindow):
         for path in paths:
             name  = os.path.basename(path)
             short = path if len(path) < 56 else "…" + path[-54:]
-            act   = QAction(f"{name}    {short}", self)
+            act = QAction(f"{name}    {short}", self)
             act.triggered.connect(lambda checked=False, p=path: self._load_repo(p))
             self._recent_menu.addAction(act)
 
@@ -159,12 +151,13 @@ class MainWindow(QMainWindow):
     def _open_dialog(self):
         """Present a folder-picker then attempt to load the chosen directory."""
         start = self._state.repo_path or os.path.expanduser("~")
-        path  = QFileDialog.getExistingDirectory(
+        path = QFileDialog.getExistingDirectory(
             self, "Open Repository", start,
             QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks,
         )
         if path:
             self._load_repo(path)
+
 
     def _load_repo(self, path: str):
         """Load `path` as a Git repositoryand persist in recent list."""
@@ -175,7 +168,6 @@ class MainWindow(QMainWindow):
             self._accept_repo(repo)
 
         except (InvalidGitRepositoryError, NoSuchPathError):
-            # Ask user whether to initialise a fresh repository here
             self._state.logger.log(f"Not a git repo: {path}", "WARN")
             dlg = InitRepoDialog(path, parent=self)
             if dlg.exec() == QDialog.DialogCode.Accepted:
@@ -224,7 +216,6 @@ class MainWindow(QMainWindow):
         box.setText(message)
         box.setIcon(QMessageBox.Icon.Warning)
         box.exec()
-
 
 
     def _on_repo_changed(self, repo):
