@@ -1,6 +1,8 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit 
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit, QLabel
 
-from utils.helper import *
+from utils.helper import label
+from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
+                                    ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)
 
 
 class LogPanel(QWidget):
@@ -98,6 +100,7 @@ class LogPanel(QWidget):
         sb = self._body.verticalScrollBar()
         sb.setValue(sb.maximum())
 
+
     def toggle(self):
         """Collapse body to header-only strip, or restore it."""
         self._expanded = not self._expanded
@@ -105,8 +108,12 @@ class LogPanel(QWidget):
         self._toggle_btn.setText(
             "▾  Git Log" if self._expanded else "▸  Git Log"
         )
+        
+        if self._expanded:
+            self.setMaximumHeight(16777215)
+        else:
+            self.setMaximumHeight(28)
 
-    # Private
 
     def _clear(self):
         self._body.clear()
