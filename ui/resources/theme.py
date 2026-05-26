@@ -477,4 +477,44 @@ QPlainTextEdit#diffEditor {{
     selection-background-color: {BG_HOVER};
     selection-color: {TEXT_PRIMARY};
 }}
+
+
+
+/* ── Pack filter ── */
+#packFilter {{
+    background: {BG_HOVER};
+    border: 1px solid {SEPARATOR};
+    border-radius: 6px;
+    color: {TEXT_PRIMARY};
+    font-size: 12px;
+    padding: 4px 10px;
+    selection-background-color: {ACCENT};
+}}
+#packFilter:focus {{ border-color: {ACCENT}; }}
+
+
+
+/* ── Pack table ── */
+#packTable {{
+    background: {BG_BASE};
+    alternate-background-color: {BG_PANEL};
+    border: none;
+    gridline-color: transparent;
+    outline: none;
+    color: {TEXT_SECONDARY};
+    font-size: 12px;
+}}
+#packTable::item:selected {{
+    background: {ACCENT};
+    color: white;
+}}
+QHeaderView#packTable::section {{
+    background: {BG_PANEL};
+    color: {TEXT_TERTIARY};
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border: none;
+    border-bottom: 1px solid {SEPARATOR};
+}}
 """
