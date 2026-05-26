@@ -3,60 +3,53 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 import git
+from git.objects import Commit as GitCommit
 
 
 @dataclass
 class CommitNode:
-    """
-    Immutable identity fields are set at construction time.
-    Graph-topology fields (child_shas, labels) are populated by DAGLayout.
-    Position fields (x, y, parent_cols) are written by the lane-assignment pass.
+    sha:str
+    short_sha:str
+    message:str
+    author:str
+    date:int
 
-    x           — column (lane index, 0 = leftmost / primary branch)
-    y           — row    (0 = newest commit, increases toward the root)
-    parent_cols — column index of each parent, in parent_shas order.
-                  parent_cols[0] is the primary-parent column (usually == x).
-                  parent_cols[1:] are the incoming merge columns.
-                  The renderer uses this to draw connecting segments and
-                  diagonal merge curves without re-deriving lane positions.
-    """
+    parent_shas:list[str] = field(default_factory=list)
+    child_shas:list[str] = field(default_factory=list)
+    labels:list[str] = field(default_factory=list)
 
-    sha:         str
-    short_sha:   str
-    message:     str
-    author:      str
-    date:        int
-
-    parent_shas: list[str] = field(default_factory=list)
-    child_shas:  list[str] = field(default_factory=list)
-    labels:      list[str] = field(default_factory=list)
-
-    x:           int       = 0
-    y:           int       = 0
+    x:int = 0
+    y:int = 0
     parent_cols: list[int] = field(default_factory=list) 
-    # lane positions 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DAGLayout — walks the repo, sorts commits, assigns grid positions
-# ─────────────────────────────────────────────────────────────────────────────
 
 class DAGLayout:
-    """
-    Converts a git.Repo into a positioned grid of CommitNodes.
-
-    Usage::
-
-        layout  = DAGLayout()
-        nodes, col_count = layout.build(repo)
-
-    ``nodes``     — list[CommitNode] ordered newest-first (nodes[0] is HEAD).
-    ``col_count`` — number of columns occupied (width of the grid).
-
-    The grid is sized dynamically: row count equals len(nodes) and column
-    count equals the peak number of simultaneously live branch lanes.
-    """
-
     MAX_COMMITS: int = 2000
+
+    @staticmethod
+    def _safe_sha(obj) -> "str | None":
+        try:
+            sha = obj.hexsha
+            if isinstance(sha, (bytes, bytearray)):
+                sha = sha.decode("ascii")
+            return sha if isinstance(sha, str) and len(sha) == 40 else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _peel_to_commit(obj) -> "GitCommit | None":
+        seen = set()
+        while obj is not None:
+            oid = id(obj)
+            if oid in seen:
+                return None
+            seen.add(oid)
+            if isinstance(obj, GitCommit):
+                return obj
+
+            obj = getattr(obj, "object", None)
+        return None
+
 
     def build(self, repo: git.Repo) -> tuple[list[CommitNode], int]:
         nodes   = self._collect(repo)
@@ -66,29 +59,38 @@ class DAGLayout:
         col_count = max((n.x for n in ordered), default=0) + 1
         return ordered, col_count
 
-    # ── Collection ────────────────────────────────────────────────────────────
 
     def _collect(self, repo: git.Repo) -> dict[str, CommitNode]:
-        """
-        Walk every reachable commit up to MAX_COMMITS using git's own
-        topo-order (children before parents, date-sorted within a level).
-        A second pass wires up child_shas from the parent_shas lists.
-        """
         nodes: dict[str, CommitNode] = {}
 
-        for commit in repo.iter_commits(
-            "--all", max_count=self.MAX_COMMITS, topo_order=True
-        ):
-            sha = commit.hexsha
-            if sha in nodes:
+        for commit in repo.iter_commits("--all", max_count=self.MAX_COMMITS, topo_order=True):
+            if not isinstance(commit, GitCommit):
                 continue
+
+            sha = self._safe_sha(commit)
+            if sha is None or sha in nodes:
+                continue
+
+            parent_shas: list[str] = []
+            for p in commit.parents:
+                p_sha = self._safe_sha(p)
+                if p_sha:
+                    parent_shas.append(p_sha)
+
+            try:
+                author = commit.author.name or commit.author.email or "unknown"
+                message = commit.message.split("\n", 1)[0].strip()
+                date = commit.committed_date
+            except Exception:
+                continue
+            
             nodes[sha] = CommitNode(
-                sha = sha,
-                short_sha = sha[:7],
-                message = commit.message.split("\n", 1)[0].strip(),
-                author = commit.author.name or commit.author.email,
-                date = commit.committed_date,
-                parent_shas = [p.hexsha for p in commit.parents],
+                sha         = sha,
+                short_sha   = sha[:7],
+                message     = message,
+                author      = author,
+                date        = date,
+                parent_shas = parent_shas,
             )
 
         for node in nodes.values():
@@ -98,25 +100,19 @@ class DAGLayout:
 
         return nodes
 
-    # ── Label assignment ──────────────────────────────────────────────────────
 
     def _assign_labels(self, repo: git.Repo, nodes: dict[str, CommitNode]):
-        """
-        Attach human-readable ref names to CommitNodes.
-
-        Local branches  — plain name; the checked-out branch gets a "● " prefix.
-        Remote refs     — full refname (origin/main, etc.).
-        Tags            — "tag: <name>".
-        Detached HEAD   — "HEAD" inserted at position 0.
-        """
         try:
             active = repo.active_branch.name
         except TypeError:
             active = None
 
         for branch in repo.branches:
-            sha = branch.commit.hexsha
-            if sha not in nodes:
+            try:
+                sha = self._safe_sha(branch.commit)
+            except Exception:
+                continue
+            if sha is None or sha not in nodes:
                 continue
             lbl = f"\u25cf {branch.name}" if branch.name == active else branch.name
             nodes[sha].labels.append(lbl)
@@ -124,37 +120,33 @@ class DAGLayout:
         for remote in repo.remotes:
             for ref in remote.refs:
                 try:
-                    sha = ref.commit.hexsha
+                    sha = self._safe_sha(ref.commit)
                 except Exception:
                     continue
-                if sha in nodes:
+                if sha and sha in nodes:
                     nodes[sha].labels.append(ref.name)
 
         for tag in repo.tags:
             try:
-                sha = tag.commit.hexsha
+                commit = self._peel_to_commit(tag.object)
+                if commit is None:
+                    continue
+                sha = self._safe_sha(commit)
             except Exception:
                 continue
-            if sha in nodes:
+            if sha and sha in nodes:
                 nodes[sha].labels.append(f"tag: {tag.name}")
 
         if active is None:
-            sha = repo.head.commit.hexsha
-            if sha in nodes:
-                nodes[sha].labels.insert(0, "HEAD")
+            try:
+                sha = self._safe_sha(repo.head.commit)
+                if sha and sha in nodes:
+                    nodes[sha].labels.insert(0, "HEAD")
+            except Exception:
+                pass
 
-    # ── Topological sort ──────────────────────────────────────────────────────
 
     def _topo_sort(self, nodes: dict[str, CommitNode]) -> list[CommitNode]:
-        """
-        Kahn's algorithm adapted for a commit DAG.
-
-        Edges point child → parent (commit.parents).  We want to emit
-        children before parents, so in_degree[sha] counts how many of
-        sha's *children* have not yet been emitted.  The ready-set starts
-        with branch-tip commits (in_degree == 0).  A min-heap keyed on
-        (-date, sha) breaks ties so that newer commits surface first.
-        """
         in_degree: dict[str, int] = {sha: 0 for sha in nodes}
         for node in nodes.values():
             for p_sha in node.parent_shas:
@@ -180,39 +172,8 @@ class DAGLayout:
 
         return ordered
 
-    # ── Lane / column assignment ──────────────────────────────────────────────
 
     def _assign_positions(self, ordered: list[CommitNode]):
-        """
-        Single-pass lane-parking algorithm (newest-first).
-
-        Two parallel structures are kept in sync at all times:
-          lanes[col]       — SHA expected to arrive in col next, or None (free)
-          sha_to_col[sha]  — O(1) reverse map: sha → its current col
-
-        Invariant: lanes[c] == s  ↔  sha_to_col[s] == c
-
-        Pass rules
-        ----------
-        Claim  — if sha is already in sha_to_col, pop it and take that col;
-                  otherwise grab the first free slot (_free_lane).
-                  Either way, col is left as None after the commit is drawn.
-
-        Forward (first parent)
-          • p0 already in sha_to_col  →  fork case: two children share p0.
-            The current col is freed; p0 keeps its existing column.
-            parent_cols[0] = sha_to_col[p0].
-          • p0 not in sha_to_col  →  normal continuation: p0 inherits col.
-            parent_cols[0] = col.
-
-        Forward (extra parents — merge commit)
-          • Already in sha_to_col  →  another branch already claimed it;
-            record that column, make no new allocation.
-          • Not in sha_to_col  →  allocate a new free slot for this parent.
-
-        parent_cols is stored on the node so the renderer can draw
-        connecting segments and diagonal merge curves directly.
-        """
         lanes:      list[Optional[str]] = []
         sha_to_col: dict[str, int]      = {}
 
@@ -252,6 +213,7 @@ class DAGLayout:
             node.parent_cols = parent_cols
             self._trim_lanes(lanes)
 
+
     @staticmethod
     def _free_lane(lanes: list[Optional[str]]) -> int:
         """Return the index of the first None slot, appending one if needed."""
@@ -260,6 +222,7 @@ class DAGLayout:
                 return i
         lanes.append(None)
         return len(lanes) - 1
+
 
     @staticmethod
     def _trim_lanes(lanes: list[Optional[str]]):
