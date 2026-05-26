@@ -6,14 +6,14 @@ from git_backend.logger import GitLogger
 class AppState(QObject):
     """
     Single source of truth shared by every panel.
-    Call set_repo() to load a repository; all subscribers are notified via
-    the repo_changed signal automatically.
     """
 
     repo_changed = Signal(object)
-    reset_preview_requested = Signal(str, str)   # (target_sha, mode) ← add
-    reset_preview_cleared   = Signal()            # ← add
+    reset_preview_requested = Signal(str, str)
+    reset_preview_cleared = Signal()
 
+    revert_preview_requested  = Signal(str)
+    revert_preview_cleared = Signal()
 
     def __init__(self):
         super().__init__()
