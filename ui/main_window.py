@@ -15,6 +15,8 @@ from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
 from ui.widgets.reset import TimeTravelPanel, ResetVisualizerPanel
 from ui.widgets.revert import RevertWalkthroughPanel
+from ui.widgets.merge import MergeConflictVisualizer
+from ui.widgets.command import CommandPreviewWidget
 
 import git
 from git.exc import InvalidGitRepositoryError, NoSuchPathError
@@ -53,17 +55,28 @@ class MainWindow(QMainWindow):
 
         state.repo_changed.connect(self._on_repo_changed)
 
-        # Vertical splitter: main panels on top, log panel on bottom
+        # Vertical splitter: main panels | log panel | command preview
         self._log_panel = LogPanel()
         state.logger.message_logged.connect(self._log_panel.append)
 
+        self._cmd_panel = CommandPreviewWidget(state)
+
         v_split = QSplitter(Qt.Orientation.Vertical)
         v_split.setHandleWidth(1)
-        v_split.addWidget(h_split)
-        v_split.addWidget(self._log_panel)
         v_split.setCollapsible(0, False)
         v_split.setCollapsible(1, True)
-        v_split.setSizes([560, 180])
+        v_split.setCollapsible(2, True)
+        
+        v_split.addWidget(h_split)         
+        v_split.addWidget(self._log_panel) 
+        v_split.addWidget(self._cmd_panel) 
+        
+        v_split.setSizes([520, 140, 36])
+        v_split.setStretchFactor(0, 1) 
+        v_split.setStretchFactor(1, 0)
+        v_split.setStretchFactor(2, 0)
+
+        self.setCentralWidget(v_split)
 
         self._build_menu()
         self._time_travel = TimeTravelPanel(state, parent=self)
@@ -72,6 +85,14 @@ class MainWindow(QMainWindow):
 
         self._reset_vis = ResetVisualizerPanel(state, parent=self)
         self._revert_walk = RevertWalkthroughPanel(state, parent=self)
+    
+        self._conflict_vis = MergeConflictVisualizer(state, parent=self)
+
+
+    def _open_conflict_vis(self):
+        self._conflict_vis.show()
+        self._conflict_vis.raise_()
+        self._conflict_vis.activateWindow()
 
 
     def _open_revert_walkthrough(self):
@@ -115,6 +136,10 @@ class MainWindow(QMainWindow):
         rv2_act = QAction("Revert Walkthrough…", self)
         rv2_act.triggered.connect(self._open_revert_walkthrough)
         gm.addAction(rv2_act)
+
+        cv_act = QAction("Merge Conflict Visualizer…", self)
+        cv_act.triggered.connect(self._open_conflict_vis)
+        gm.addAction(cv_act)
         
         # Recent Repositories sub-menu, rebuilt each time it's opened
         self._recent_menu = QMenu("Recent Repositories", self)
@@ -139,6 +164,7 @@ class MainWindow(QMainWindow):
         toggle_log.setShortcut(QKeySequence("Ctrl+Shift+L"))
         toggle_log.triggered.connect(self._log_panel.toggle)
         vm.addAction(toggle_log)
+
 
     def _rebuild_recent_menu(self):
         """Regenerate Recent Repositories entries each time the sub-menu opens."""
