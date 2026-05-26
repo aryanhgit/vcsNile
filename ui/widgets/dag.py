@@ -59,6 +59,8 @@ class DagCanvas(QGraphicsView):
         self._revert_ghost: list = []
         state.revert_preview_requested.connect(self._on_preview_revert)
         state.revert_preview_cleared.connect(self._clear_revert_preview)
+        
+        state.reflog_entry_selected.connect(self._on_reflog_entry_selected)
 
         state.reset_preview_requested.connect(self._on_preview_reset)
         state.reset_preview_cleared.connect(self._clear_overlays)
@@ -390,33 +392,6 @@ class DagCanvas(QGraphicsView):
 
         return x + pw
 
-
-    def _on_selection_changed(self):
-        selected = [i for i in self._scene.selectedItems() if i.data(0)]
-        if not selected:
-            self._selected_sha = None
-            self._co_btn.hide()
-            return
-
-        sha = selected[0].data(0)
-        if sha == self._head_sha:
-            self._co_btn.hide()
-            return
-
-        self._selected_sha = sha
-        self.commit_selected.emit(sha)
-        scene_pt = self._nodes.get(sha)
-
-        if scene_pt:
-            view_pt = self.mapFromScene(scene_pt)
-            self._co_btn.adjustSize()
-            self._co_btn.move(
-                view_pt.x() + self.NODE_R + 8,
-                view_pt.y() - self._co_btn.height() // 2,
-            )
-            self._co_btn.show()
-            self._co_btn.raise_()
-
     def _on_checkout_clicked(self):
         sha  = self._selected_sha
         repo = self._state.repo
@@ -586,3 +561,56 @@ class DagCanvas(QGraphicsView):
         for item in self._revert_ghost:
             self._scene.removeItem(item)
         self._revert_ghost.clear()
+
+    def _on_reflog_entry_selected(self, short_sha: str):
+        """Select and centre the node whose SHA starts with short_sha."""
+        full_sha = next((s for s in self._nodes if s.startswith(short_sha)), None)
+        if full_sha is None:
+            return
+        self._scene.clearSelection()
+        for item in self._scene.items():
+            if item.data(0) == full_sha:
+                item.setSelected(True)
+                break
+        self.centerOn(self._nodes[full_sha])
+
+
+    def _on_selection_changed(self):
+        selected = [it for it in self._scene.selectedItems() if it.data(0)]
+
+        if not selected:
+            self._selected_sha = None
+            self._co_btn.hide()
+            self._state.commit_selected.emit(None)
+            return
+
+        sha = selected[0].data(0)
+        self._selected_sha = sha
+
+        commit = None
+        if sha and self._state.repo:
+            try:
+                commit = self._state.repo.commit(sha)
+            except Exception:
+                pass
+
+        self._state.commit_selected.emit(commit)
+
+        # Hide checkout button if selected commit is HEAD
+        if sha == self._head_sha:
+            self._co_btn.hide()
+            return
+
+        scene_pt = self._nodes.get(sha)
+
+        if scene_pt:
+            view_pt = self.mapFromScene(scene_pt)
+
+            self._co_btn.adjustSize()
+            self._co_btn.move(
+                view_pt.x() + self.NODE_R + 8,
+                view_pt.y() - self._co_btn.height() // 2,
+            )
+
+            self._co_btn.show()
+            self._co_btn.raise_()
