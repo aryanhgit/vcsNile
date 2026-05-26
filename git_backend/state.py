@@ -15,6 +15,10 @@ class AppState(QObject):
     revert_preview_requested  = Signal(str)
     revert_preview_cleared = Signal()
 
+    reflog_entry_selected = Signal(str)
+
+    commit_selected = Signal(object)
+
     def __init__(self):
         super().__init__()
         self._repo = None
