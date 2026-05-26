@@ -13,7 +13,8 @@ from ui.widgets.central import CentralArea
 from ui.widgets.details import DetailsPanel
 from ui.widgets.dialog import InitRepoDialog
 from ui.widgets.log import LogPanel
-from ui.widgets.travel import TimeTravelPanel, ResetVisualizerPanel
+from ui.widgets.reset import TimeTravelPanel, ResetVisualizerPanel
+from ui.widgets.revert import RevertWalkthroughPanel
 
 import git
 from git.exc import InvalidGitRepositoryError, NoSuchPathError
@@ -70,6 +71,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(v_split)
 
         self._reset_vis = ResetVisualizerPanel(state, parent=self)
+        self._revert_walk = RevertWalkthroughPanel(state, parent=self)
+
+
+    def _open_revert_walkthrough(self):
+        self._revert_walk.show()
+        self._revert_walk.raise_()
+        self._revert_walk.activateWindow()
 
 
     def _open_reset_visualizer(self):
@@ -104,6 +112,10 @@ class MainWindow(QMainWindow):
         rv_act.triggered.connect(self._open_reset_visualizer)
         gm.addAction(rv_act)
 
+        rv2_act = QAction("Revert Walkthrough…", self)
+        rv2_act.triggered.connect(self._open_revert_walkthrough)
+        gm.addAction(rv2_act)
+        
         # Recent Repositories sub-menu, rebuilt each time it's opened
         self._recent_menu = QMenu("Recent Repositories", self)
         self._recent_menu.aboutToShow.connect(self._rebuild_recent_menu)
