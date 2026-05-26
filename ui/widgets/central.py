@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QTabWidget
 from ui.widgets.dag import DagCanvas
 from ui.widgets.explorer import ObjectExplorerTab
 from ui.widgets.staging import StagingWidget
+from ui.widgets.reflog import ReflogTab
 
 class CentralArea(QTabWidget):
     def __init__(self, state: AppState):
@@ -13,3 +14,4 @@ class CentralArea(QTabWidget):
         self.addTab(DagCanvas(state), "Commit Graph")
         self.addTab(StagingWidget(state), "Staging")
         self.addTab(ObjectExplorerTab(state), "Objects")
+        self.addTab(ReflogTab(state), "Reflog")
