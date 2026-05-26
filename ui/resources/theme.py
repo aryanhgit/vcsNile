@@ -1,5 +1,5 @@
-from ui.resources.constants import *
-
+from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
+                                    ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)
 STYLESHEET = f"""
 QMainWindow, QWidget {{
     background: {BG_BASE};
@@ -7,29 +7,6 @@ QMainWindow, QWidget {{
     font-family: "SF Pro Text", "Segoe UI", "Noto Sans", sans-serif;
     font-size: 13px;
 }}
-
-/* ── Toolbar ── */
-QToolBar {{
-    background: {BG_PANEL};
-    border-bottom: 1px solid {SEPARATOR};
-    spacing: 6px;
-    padding: 4px 8px;
-}}
-QToolBar QPushButton {{
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    color: {TEXT_PRIMARY};
-    padding: 5px 10px;
-    font-size: 13px;
-}}
-QToolBar QPushButton:hover {{
-    background: {BG_HOVER};
-}}
-QToolBar QPushButton:pressed {{
-    background: {SEPARATOR};
-}}
-
 
 
 /* ── Menu bar ── */
@@ -84,17 +61,6 @@ QMenu::separator  {{ height: 1px; background: {SEPARATOR}; margin: 4px 10px; }}
 }}
 #sidebar QTreeWidget::branch {{
     background: transparent;
-}}
-
-
-/* ── Section headers inside sidebar ── */
-#sectionLabel {{
-    color: {TEXT_TERTIARY};
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    padding: 14px 14px 4px 14px;
-    text-transform: uppercase;
 }}
 
 
@@ -219,7 +185,7 @@ QTextEdit {{
 }}
 #sidebarTree::item:hover    {{ background: {BG_HOVER}; }}
 #sidebarTree::item:selected {{ background: {ACCENT}; color: white; }}
-/* collapse/expand arrow — tinted to match palette */
+
 #sidebarTree::branch {{ background: transparent; }}
 #sidebarTree::branch:has-children:closed {{ color: {TEXT_TERTIARY}; }}
 #sidebarTree::branch:open               {{ color: {TEXT_SECONDARY}; }}
@@ -434,4 +400,55 @@ QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
 #rvModeCard {{
     background: {BG_PANEL}; border-radius: 8px; border: 1px solid {SEPARATOR};
 }}
+
+
+
+/* ── Merge Conflict Visualizer ── */
+#conflictPane {{ background: {BG_PANEL}; }}
+#conflictEditor {{
+    background: {BG_BASE}; border: none; outline: none;
+    color: {TEXT_PRIMARY};
+    font-family: "SF Mono","Menlo","Consolas",monospace;
+    font-size: 11px; padding: 4px 8px;
+    selection-background-color: {ACCENT};
+}}
+/* Thin coloured left border on each pane to orient the user */
+#conflictPane[role="ours"]    {{ border-left: 3px solid {ACCENT}; }}
+#conflictPane[role="theirs"]  {{ border-left: 3px solid {ACCENT_ORANGE}; }}
+#conflictPane[role="base"]    {{ border-left: 3px solid {TEXT_TERTIARY}; }}
+/* Legend pills */
+#legendPill {{
+    background: {BG_BASE}; border-radius: 3px; padding: 1px 5px;
+    font-size: 10px;
+}}
+
+
+
+/* ── Command Preview Panel ── */
+#cmdPanel {{ background: {BG_PANEL}; border-top: 1px solid {SEPARATOR}; }}
+#cmdBar   {{ background: {BG_PANEL}; }}
+#cmdInput {{
+    background: {BG_BASE}; border: 1px solid {SEPARATOR}; border-radius: 6px;
+    color: {TEXT_PRIMARY};
+    font-family: "SF Mono","Menlo","Consolas",monospace;
+    font-size: 12px; padding: 4px 10px;
+    selection-background-color: {ACCENT};
+}}
+#cmdInput:focus {{ border-color: {ACCENT}; }}
+#cmdPreviewBtn {{
+    background: {ACCENT}; border: none; border-radius: 5px;
+    color: white; font-size: 11px; font-weight: 600; padding: 0 12px;
+}}
+#cmdPreviewBtn:hover  {{ background: #0077e6; }}
+#cmdToggleBtn {{
+    background: {BG_HOVER}; border: none; border-radius: 5px;
+    color: {TEXT_SECONDARY}; font-size: 13px; font-weight: 700;
+}}
+#cmdToggleBtn:hover {{ color: {TEXT_PRIMARY}; background: {SEPARATOR}; }}
+#cmdTree {{
+    background: {BG_BASE}; border: none; outline: none; font-size: 12px;
+}}
+#cmdTree::item           {{ padding: 3px 2px; }}
+#cmdTree::item:hover     {{ background: {BG_HOVER}; }}
+#cmdTree::item:selected  {{ background: {ACCENT}; color: white; }}
 """
