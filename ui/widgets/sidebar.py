@@ -4,15 +4,15 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
 
 from git_backend.state import AppState
-from utils.helper import *
-
+from utils.helper import label, h_separator, dot_badge
+from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
+                                    ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)
 
 class Sidebar(QWidget):
     """
-    Single QTreeWidget with three collapsible group headers, Local Branches, Remote Branches and Tags.
+    Three collapsible group headers, Local Branches, Remote Branches and Tags.
     """
-
-    branch_clicked = Signal(str) 
+    branch_clicked = Signal(str)
 
     def __init__(self, state: AppState):
         super().__init__()
@@ -31,7 +31,7 @@ class Sidebar(QWidget):
         hl = QHBoxLayout(hdr)
         hl.setContentsMargins(14, 10, 14, 10)
 
-        self._name_lbl   = label("No Repository", 14, TEXT_SECONDARY, 600)
+        self._name_lbl = label("No Repository", 14, TEXT_SECONDARY, 600)
         self._branch_dot = dot_badge(TEXT_TERTIARY)
         self._branch_lbl = label("—", 11, TEXT_TERTIARY)
 
@@ -47,16 +47,21 @@ class Sidebar(QWidget):
         self._tree = QTreeWidget()
         self._tree.setObjectName("sidebarTree")
         self._tree.setHeaderHidden(True)
-        self._tree.setRootIsDecorated(True)
+
+        self._tree.setRootIsDecorated(False)
+        
         self._tree.setIndentation(16)
         self._tree.setAnimated(True)
         self._tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._tree.itemClicked.connect(self._on_item_clicked)
 
+        self._tree.itemExpanded.connect(self._on_group_expanded)
+        self._tree.itemCollapsed.connect(self._on_group_collapsed)
+
         # Pre-build the three permanent group headers
-        self._grp_local   = self._make_group("Local Branches", "⎇")
+        self._grp_local = self._make_group("Local Branches", "⎇")
         self._grp_remote  = self._make_group("Remote Branches", "⌥")
-        self._grp_tags    = self._make_group("Tags", "◇")
+        self._grp_tags = self._make_group("Tags", "◇")
         for grp in (self._grp_local, self._grp_remote, self._grp_tags):
             self._tree.addTopLevelItem(grp)
             grp.setExpanded(True)
@@ -180,12 +185,31 @@ class Sidebar(QWidget):
     @staticmethod
     def _make_group(title: str, icon: str) -> QTreeWidgetItem:
         """Create a non-selectable top-level group header item."""
-        item = QTreeWidgetItem([f"  {icon}  {title}"])
-        f = QFont(); f.setPointSize(11); f.setBold(True)
+        item = QTreeWidgetItem([f"▾  {icon}  {title}"])
+        
+        item.setData(0, Qt.ItemDataRole.UserRole, title)
+        item.setData(0, Qt.ItemDataRole.UserRole + 1, icon)
+
+        f = QFont()
+        f.setPointSize(10)
+        f.setBold(True)
 
         item.setFont(0, f)
         item.setForeground(0, QColor(TEXT_TERTIARY))
 
-        # Prevent the group header itself from being selected as a branch
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
         return item
+
+
+    def _on_group_expanded(self, item: QTreeWidgetItem):
+        title = item.data(0, Qt.ItemDataRole.UserRole)
+        icon = item.data(0, Qt.ItemDataRole.UserRole + 1)
+        if title and icon:
+            item.setText(0, f"▾  {icon}  {title}")
+
+
+    def _on_group_collapsed(self, item: QTreeWidgetItem):
+        title = item.data(0, Qt.ItemDataRole.UserRole)
+        icon = item.data(0, Qt.ItemDataRole.UserRole + 1)
+        if title and icon:
+            item.setText(0, f"▸  {icon}  {title}")
