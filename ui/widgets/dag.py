@@ -56,6 +56,10 @@ class DagCanvas(QGraphicsView):
         self._overlays: list = []
         self._col_count: int = 1
 
+        self._revert_ghost: list = []
+        state.revert_preview_requested.connect(self._on_preview_revert)
+        state.revert_preview_cleared.connect(self._clear_revert_preview)
+
         state.reset_preview_requested.connect(self._on_preview_reset)
         state.reset_preview_cleared.connect(self._clear_overlays)
 
@@ -486,3 +490,99 @@ class DagCanvas(QGraphicsView):
         for item in self._overlays:
             self._scene.removeItem(item)
         self._overlays.clear()
+
+
+    def _on_preview_revert(self, target_sha: str):
+        """
+        Draw a ghost commit node one row above HEAD.
+        """
+        self._clear_revert_preview()
+        repo = self._state.repo
+        if repo is None or target_sha not in self._nodes:
+            return
+
+        try:
+            head_sha = repo.head.commit.hexsha
+        except Exception:
+            return
+
+        if head_sha not in self._nodes:
+            return
+
+        head_pt   = self._nodes[head_sha]
+        ghost_pt  = QPointF(head_pt.x(), head_pt.y() - self.ROW_H)
+        target_pt = self._nodes[target_sha]
+        r         = self.NODE_R
+
+        dash_pen = QPen(QColor(ACCENT_GREEN), 2)
+        dash_pen.setStyle(Qt.PenStyle.DashLine)
+        ghost_circle = self._scene.addEllipse(
+            ghost_pt.x() - r, ghost_pt.y() - r, r * 2, r * 2,
+            dash_pen,
+            QBrush(QColor(48, 209, 88, 55)),
+        )
+        ghost_circle.setZValue(8)
+        self._revert_ghost.append(ghost_circle)
+
+        mono = QFont()
+        mono.setFamilies(["SF Mono", "Menlo", "Consolas"])
+        mono.setPointSize(10)
+        ghost_lbl = self._scene.addText("new commit  (preview)", mono)
+        ghost_lbl.setDefaultTextColor(QColor(ACCENT_GREEN))
+        ghost_lbl.setPos(ghost_pt.x() + r + 8, ghost_pt.y() - 9)
+        ghost_lbl.setZValue(8)
+        self._revert_ghost.append(ghost_lbl)
+
+        solid_pen = QPen(QColor(ACCENT_GREEN), 1.5)
+        edge = self._scene.addLine(
+            ghost_pt.x(), ghost_pt.y() + r,
+            head_pt.x(),  head_pt.y()  - r,
+            solid_pen,
+        )
+        edge.setZValue(7)
+        self._revert_ghost.append(edge)
+
+        reverts_pen = QPen(QColor(ACCENT_ORANGE), 1.5)
+        reverts_pen.setStyle(Qt.PenStyle.DashLine)
+        arrow = self._scene.addLine(
+            ghost_pt.x(), ghost_pt.y(),
+            target_pt.x(), target_pt.y(),
+            reverts_pen,
+        )
+        arrow.setZValue(7)
+        self._revert_ghost.append(arrow)
+
+        ah_pen = QPen(QColor(ACCENT_ORANGE), 1.5)
+        dx = target_pt.x() - ghost_pt.x()
+        dy = target_pt.y() - ghost_pt.y()
+        length = (dx**2 + dy**2) ** 0.5 or 1
+        ux, uy = dx / length, dy / length
+        px, py = -uy, ux
+        tip_x  = target_pt.x() - ux * (r + 2)
+        tip_y  = target_pt.y() - uy * (r + 2)
+        for sx, sy in [(1, 1), (-1, 1)]:
+            ah = self._scene.addLine(
+                tip_x, tip_y,
+                tip_x - ux*8 + px*5*sx, tip_y - uy*8 + py*5*sy,
+                ah_pen,
+            )
+            ah.setZValue(7)
+            self._revert_ghost.append(ah)
+
+        ui_font = QFont(); ui_font.setPointSize(10)
+        mid_x = (ghost_pt.x() + target_pt.x()) / 2
+        mid_y = (ghost_pt.y() + target_pt.y()) / 2
+        rev_lbl = self._scene.addText("reverts", ui_font)
+        rev_lbl.setDefaultTextColor(QColor(ACCENT_ORANGE))
+        rev_lbl.setPos(mid_x + r + 4, mid_y - 9)
+        rev_lbl.setZValue(9)
+        self._revert_ghost.append(rev_lbl)
+
+        self.centerOn(ghost_pt)
+
+
+    def _clear_revert_preview(self):
+        """Remove all revert ghost items from the scene."""
+        for item in self._revert_ghost:
+            self._scene.removeItem(item)
+        self._revert_ghost.clear()
