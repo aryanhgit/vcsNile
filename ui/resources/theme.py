@@ -451,4 +451,30 @@ QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
 #cmdTree::item           {{ padding: 3px 2px; }}
 #cmdTree::item:hover     {{ background: {BG_HOVER}; }}
 #cmdTree::item:selected  {{ background: {ACCENT}; color: white; }}
+
+
+
+/* ── Reflog tree ── */
+#reflogTree {{
+    background: {BG_BASE};
+    border: none;
+    outline: none;
+}}
+#reflogTree::item {{
+    height: 26px;
+    padding-left: 6px;
+    border-radius: 4px;
+}}
+#reflogTree::item:hover    {{ background: {BG_HOVER}; }}
+#reflogTree::item:selected {{ background: {ACCENT}; color: white; }}
+
+
+/* ── Diff panel ── */
+QPlainTextEdit#diffEditor {{
+    background: {BG_BASE};
+    color: {TEXT_SECONDARY};
+    border: none;
+    selection-background-color: {BG_HOVER};
+    selection-color: {TEXT_PRIMARY};
+}}
 """
