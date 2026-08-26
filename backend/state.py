@@ -1,6 +1,6 @@
 from PySide6.QtCore import QObject, Signal
 
-from git_backend.logger import GitLogger
+from backend.logger import GitLogger
 
 
 class AppState(QObject):

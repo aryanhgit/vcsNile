@@ -11,7 +11,7 @@ from PySide6.QtGui import (
 from ui.resources.theme import (ACCENT, ACCENT_GREEN, ACCENT_ORANGE, ACCENT_RED, SEPARATOR, TEXT_SECONDARY, TEXT_TERTIARY, TEXT_PRIMARY)
 from utils.helper import label
 from utils.state import AppState
-from git_backend.dagmodel import DAGLayout
+from backend.dagmodel import DAGLayout
 
 class DagCanvas(QGraphicsView):
     """

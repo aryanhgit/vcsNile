@@ -1,1 +1,1 @@
-from git_backend.recent_repos import RecentRepos
+from backend.recent_repos import RecentRepos

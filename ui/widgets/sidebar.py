@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QT
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
 
-from git_backend.state import AppState
+from backend.state import AppState
 from utils.helper import label, h_separator, dot_badge
 from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
                                     ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)

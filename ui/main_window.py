@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QMainWindow, QSplitter, QMenu, QFileDialog, QDialo
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
 
-from git_backend.recent_repos import RecentRepos
-from git_backend.state import AppState
+from backend.recent_repos import RecentRepos
+from backend.state import AppState
 from ui.resources.theme import STYLESHEET
 from ui.resources.constants import (BG_BASE, BG_PANEL, BG_HOVER, SEPARATOR, ACCENT, ACCENT_GREEN, ACCENT_RED, 
                                     ACCENT_ORANGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY)

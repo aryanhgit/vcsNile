@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPainter, QColor, QFont
 from PySide6.QtCore import Qt, Signal
 
-from git_backend.state import AppState
+from backend.state import AppState
 from utils.helper import label, h_separator
 from ui.resources.theme import (
     ACCENT, ACCENT_GREEN, ACCENT_ORANGE, ACCENT_RED,

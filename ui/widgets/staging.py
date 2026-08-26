@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem, QSizePolicy, QMenu, QLabel
 )
 
-from git_backend.state import AppState
+from backend.state import AppState
 from ui.resources.constants import (
     ACCENT, ACCENT_GREEN, ACCENT_ORANGE, BG_BASE,
     BG_HOVER, BG_PANEL, STATUS_META, TEXT_PRIMARY, TEXT_TERTIARY,

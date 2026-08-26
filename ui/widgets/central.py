@@ -1,4 +1,4 @@
-from git_backend.state import AppState
+from backend.state import AppState
 from PySide6.QtWidgets import QTabWidget
 
 from ui.widgets.dag import DagCanvas
